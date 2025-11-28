@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+
+
+@import 'react-big-calendar/lib/css/react-big-calendar.css';
+
+
+
+/* ---- Calendar Customization ---- */
+
+/* Background for days NOT in the current month (e.g., prev/next month days) */
+.rbc-off-range-bg {
+  background-color: rgba(0, 0, 0, 0.25) !important; /* Darker, semi-transparent */
+}
+
+/* Background for the CURRENT day */
+.rbc-day-bg.rbc-today {
+  background-color: rgba(239, 68, 68, 0.15) !important; /* Slightly transparent red tint */
+}
+
+/* General background for ALL date cells (optional, if you want a subtle default bg) */
+.rbc-day-bg {
+  /* background-color: rgba(255, 255, 255, 0.02); */ /* Very subtle light tint */
+}
+
+/* Ensure date numbers are visible */
+.rbc-date-cell a, /* Month view day numbers */
+.rbc-header a { /* Week/Day view headers */
+  color: #e2e8f0 !important; /* Light gray/slate */
+  opacity: 0.9;
+}
+
+/* Make off-range date numbers slightly dimmer */
+.rbc-off-range .rbc-date-cell a {
+  color: #94a3b8 !important; /* Dimmer gray/slate */
+  opacity: 0.6;
+}
+
+/* Header row (Sun, Mon, Tue...) */
+.rbc-header {
+  color: #cbd5e1; /* Slightly lighter gray */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 0;
+}
+
+/* Calendar border */
+.rbc-month-view,
+.rbc-time-view {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Lines between days/times */
+.rbc-month-row,
+.rbc-day-slot .rbc-time-slot, /* Horizontal lines in time view */
+.rbc-timeslot-group /* Separator for time slots */
+ {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.rbc-time-header-content > .rbc-row.rbc-row-resource, /* Header row above time grid */
+.rbc-time-header-content .rbc-header /* Day headers in week/day */
+{
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Time gutter background */
+.rbc-time-gutter {
+   background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Selected slot style */
+.rbc-day-slot .rbc-selected {
+    background-color: rgba(79, 70, 229, 0.3) !important; /* Semi-transparent indigo */
+    border-top: 1px solid rgba(79, 70, 229, 0.5);
+    border-bottom: 1px solid rgba(79, 70, 229, 0.5);
+}
+
+/* Event styling (adjust if needed) */
+.rbc-event {
+  padding: 3px 6px;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  opacity: 0.9;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.rbc-event.rbc-selected {
+   opacity: 1;
+   box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+/* Toolbar button styling (if using default toolbar) */
+.rbc-toolbar button {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+.rbc-toolbar button:hover, .rbc-toolbar button:focus {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    outline: none;
+}
+.rbc-toolbar button.rbc-active {
+    background-color: #ef4444; /* Red for active button */
+    border-color: #dc2626;
+    color: white;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+}
+.rbc-toolbar .rbc-toolbar-label {
+    color: white;
+    font-size: 1.25em;
+    font-weight: bold;
+}
