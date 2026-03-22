@@ -1,6 +1,6 @@
-# AI-Based Task Manager Web App - Nexus
+# AI-Based Task Manager Web App - Nexus AI
 
-Nexus is an AI-powered task management web application designed to help users organize their projects, tasks, and teams efficiently. It features a modern React frontend with real-time collaboration capabilities and a robust Node.js backend with MongoDB for data persistence.
+Nexus AI is an AI-powered task management web application designed to help users organize their projects, tasks, and teams efficiently. It features a modern React frontend with real-time collaboration capabilities and a robust Node.js backend with MongoDB for data persistence.
 
 ## Features
 
