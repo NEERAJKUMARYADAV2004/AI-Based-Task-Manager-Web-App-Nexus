@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-module.exports = function(req, res, next) {
+function auth(req, res, next) {
   // Get token from header
   const token = req.header('x-auth-token');
 
@@ -17,4 +17,6 @@ module.exports = function(req, res, next) {
   } catch (err) {
     res.status(401).json({ msg: 'Token is not valid' });
   }
-};
+}
+
+module.exports = auth;

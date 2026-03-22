@@ -48,7 +48,7 @@ const ContactUsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
 
       {/* Main content area */}
       <main className="flex-1 overflow-y-scroll custom-scrollbar relative">
-        <Header userName={userName} />
+        <Header userName={userName} setActiveMenu={setActiveMenu} />
 
         {/* Main container */}
         <div className="p-6">

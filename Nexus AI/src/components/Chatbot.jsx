@@ -211,7 +211,7 @@ const Chatbot = () => {
               )}
             </button>
             {/* Close Button */}
-            <button onClick={() => setIsOpen(false)} className="text-white/50 hover:text-white transition-colors">
+            <button onClick={() => setIsOpen(false)} className="text-white/50 hover:text-white transition-colors cursor-pointer">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
@@ -246,7 +246,7 @@ const Chatbot = () => {
           {countdown > 0 && (
             <div className="mb-2 flex items-center justify-between bg-indigo-600/20 border border-indigo-500/30 rounded px-3 py-1">
               <span className="text-xs text-indigo-200 animate-pulse">Sending in {countdown}s...</span>
-              <button onClick={cancelAutoSend} className="text-xs text-white hover:text-red-300 font-bold">Tap to Edit</button>
+              <button onClick={cancelAutoSend} className="text-xs text-white hover:text-red-300 font-bold cursor-pointer">Tap to Edit</button>
             </div>
           )}
 

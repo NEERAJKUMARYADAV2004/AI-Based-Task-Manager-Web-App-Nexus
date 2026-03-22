@@ -43,14 +43,14 @@ const TaskItem = ({ task, isEditing, editFormData, handleToggleComplete, handleE
         <li className={`p-4 rounded-lg bg-white/5 transition-colors duration-200 border-l-4 ${priorityColor(task.priority)} ${task.completed && !isEditing ? 'opacity-60' : ''}`}>
             {isEditing ? (
                 <div className="space-y-3">
-                   <input type="text" name="taskName" value={editFormData.taskName} onChange={handleEditFormChange} className="w-full p-2 rounded-lg bg-white/10 text-white font-semibold" required />
-                    <textarea name="description" value={editFormData.description} onChange={handleEditFormChange} rows="2" className="w-full p-2 rounded-lg bg-white/10 text-white text-sm" />
+                   <input type="text" name="taskName" value={editFormData.taskName} onChange={handleEditFormChange} className="w-full p-2 rounded-lg bg-white/10 text-white font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500" required />
+                    <textarea name="description" value={editFormData.description} onChange={handleEditFormChange} rows="2" className="w-full p-2 rounded-lg bg-white/10 text-white text-sm resize-none no-scrollbar focus:outline-none focus:ring-1 focus:ring-indigo-500" />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                         <input type="date" name="dueDate" value={editFormData.dueDate} onChange={handleEditFormChange} className="w-full p-2 rounded-lg bg-white/10 text-white appearance-none" />
-                         <select name="priority" value={editFormData.priority} onChange={handleEditFormChange} className="w-full p-2 rounded-lg bg-white/10 text-white appearance-none">
+                         <input type="date" name="dueDate" value={editFormData.dueDate} onChange={handleEditFormChange} className="w-full p-2 rounded-lg bg-white/10 text-white appearance-none focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                         <select name="priority" value={editFormData.priority} onChange={handleEditFormChange} className="w-full p-2 rounded-lg bg-white/10 text-white appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500">
                              <option>Low</option><option>Medium</option><option>High</option>
                          </select>
-                         <input type="text" name="workplace" value={editFormData.workplace} onChange={handleEditFormChange} placeholder="Workplace" className="w-full p-2 rounded-lg bg-white/10 text-white" />
+                         <input type="text" name="workplace" value={editFormData.workplace} onChange={handleEditFormChange} placeholder="Workplace" className="w-full p-2 rounded-lg bg-white/10 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
                     </div>
                     <div className="flex justify-end gap-3 mt-3">
                         <CustomButton onClick={handleCancelEdit} className="!bg-gray-500 hover:!bg-gray-600 px-4 py-1 text-sm">Cancel</CustomButton>
@@ -81,26 +81,25 @@ const TaskItem = ({ task, isEditing, editFormData, handleToggleComplete, handleE
     );
 };
 
-const TodoPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
+const TodoPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notifications, onDismissNotification, onClearAll }) => {
   const [tasks, setTasks] = useState([]);
-  // Form State
   const [taskNameInput, setTaskNameInput] = useState('');
   const [descriptionInput, setDescriptionInput] = useState('');
   const [dueDateInput, setDueDateInput] = useState('');
   const [priorityInput, setPriorityInput] = useState('Medium');
   const [workplaceInput, setWorkplaceInput] = useState('');
   
-  // Edit State
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editFormData, setEditFormData] = useState({ taskName: '', description: '', dueDate: '', priority: 'Medium', workplace: '' });
   
-  // Voice & Auto-Upload State
   const [isListening, setIsListening] = useState(false);
-  const [activeMicField, setActiveMicField] = useState(null); // 'name' or 'desc'
-  const [countdown, setCountdown] = useState(0);
-  const autoAddTimerRef = useRef(null);
+  const [activeMicField, setActiveMicField] = useState(null); 
+  
+  // Voice tracking refs
+  const silenceTimerRef = useRef(null);
+  const speechPauseCountRef = useRef(0);
+  const lastResultTimeRef = useRef(Date.now());
 
-  // --- FETCH TASKS FROM API ---
   useEffect(() => {
     const fetchTasks = async () => {
       try {
@@ -114,18 +113,6 @@ const TodoPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
     fetchTasks();
   }, []);
 
-  // --- Countdown Effect ---
-  useEffect(() => {
-    let interval;
-    if (countdown > 0) {
-      interval = setInterval(() => {
-        setCountdown((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [countdown]);
-
-  // --- SPEECH HELPERS ---
   const speak = (text) => { 
       if ('speechSynthesis' in window) { 
           window.speechSynthesis.cancel(); 
@@ -133,48 +120,34 @@ const TodoPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
       } 
   };
 
-  const cancelAutoAdd = () => {
-    if (autoAddTimerRef.current) {
-      clearTimeout(autoAddTimerRef.current);
-      autoAddTimerRef.current = null;
-    }
-    if (countdown > 0) {
-      setCountdown(0);
-    }
-  };
-
-  const handleVoiceInput = (field) => { // field: 'name' or 'desc'
+  const handleVoiceInput = (field) => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       alert("Voice input is not supported in this browser.");
       return;
     }
 
-    cancelAutoAdd(); // Stop any pending add if switching fields
     setActiveMicField(field);
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognition.lang = 'en-US';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+    recognition.continuous = true;
+    recognition.interimResults = true;
 
-    recognition.onstart = () => setIsListening(true);
-    
-    recognition.onend = () => {
-        setIsListening(false);
-        setActiveMicField(null);
-        // Start Auto-Upload Timer only if we have a Task Name
-        // If we just filled description but name is empty, don't auto-send yet? 
-        // Logic: If we spoke into either, assume user might be done. Check validity in handleAddTask.
-        
-        // Note: state updates might not be immediate, but handleAddTask checks current state refs or we pass data.
-        // Here we rely on state being updated by onresult before onend fires/timer finishes.
-        
-        setCountdown(5);
-        autoAddTimerRef.current = setTimeout(() => {
-            document.getElementById('addTaskBtn')?.click(); // Trigger the button click to submit
-            setCountdown(0);
-        }, 5000);
+    let finalTranscript = '';
+    speechPauseCountRef.current = 0;
+    lastResultTimeRef.current = Date.now();
+
+    const startSilenceTimer = () => {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = setTimeout(() => {
+            recognition.stop();
+        }, 10000); 
+    };
+
+    recognition.onstart = () => {
+        setIsListening(true);
+        startSilenceTimer();
     };
 
     recognition.onerror = (event) => {
@@ -184,26 +157,48 @@ const TodoPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
     };
 
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      if (field === 'name') setTaskNameInput(transcript);
-      if (field === 'desc') setDescriptionInput(transcript);
+        let currentTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript + ' ';
+            } else {
+                currentTranscript += event.results[i][0].transcript;
+            }
+        }
+        
+        const transcript = (finalTranscript + currentTranscript).trim();
+        if (!transcript) return;
+
+        if (field === 'name') setTaskNameInput(transcript);
+        if (field === 'desc') setDescriptionInput(transcript);
+
+        const now = Date.now();
+        if (now - lastResultTimeRef.current > 2000) {
+            speechPauseCountRef.current += 1;
+        }
+        lastResultTimeRef.current = now;
+
+        if (speechPauseCountRef.current >= 5) {
+            clearTimeout(silenceTimerRef.current);
+            recognition.stop();
+        } else {
+            startSilenceTimer(); 
+        }
+    };
+
+    recognition.onend = () => {
+        clearTimeout(silenceTimerRef.current);
+        setIsListening(false);
+        setActiveMicField(null);
     };
 
     recognition.start();
   };
 
-  // --- CRUD HANDLERS ---
   const handleAddTask = async (e) => {
     if (e) e.preventDefault();
-    
-    cancelAutoAdd(); // Ensure timer stops if button clicked manually
+    if (taskNameInput.trim() === '') return;
 
-    if (taskNameInput.trim() === '') {
-        // If auto-add triggered but name is empty, don't add, just warn or ignore
-        return;
-    }
-
-    // Calculate Due Date (Default 1 week if empty)
     let calculatedDueDate;
     if (dueDateInput) {
         calculatedDueDate = dueDateInput;
@@ -231,11 +226,8 @@ const TodoPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
             const savedTask = await res.json();
             setTasks([savedTask, ...tasks]); 
             speak(`Task added successfully: ${taskNameInput}`);
-            
-            // Reset form
             setTaskNameInput(''); setDescriptionInput(''); 
-            setDueDateInput(''); // Will default to empty in UI, logic handles 1 week default next time
-            setPriorityInput('Medium'); setWorkplaceInput('');
+            setDueDateInput(''); setPriorityInput('Medium'); setWorkplaceInput('');
         }
     } catch (err) { console.error("Error adding task", err); }
   };
@@ -265,7 +257,6 @@ const TodoPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
   };
   
   const handleEditClick = (task) => { 
-      cancelAutoAdd(); // Safety
       setEditingTaskId(task._id); 
       setEditFormData({ taskName: task.taskName, description: task.description, dueDate: formatDateForInput(task.dueDate), priority: task.priority, workplace: task.workplace || '' }); 
   };
@@ -288,7 +279,6 @@ const TodoPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
   const handleCancelEdit = () => { setEditingTaskId(null); };
   const handleEditFormChange = (e) => { const { name, value } = e.target; setEditFormData(prev => ({ ...prev, [name]: value })); };
 
-  // --- Filtering ---
   const upcomingTasks = tasks.filter(task => getTaskStatus(task) === 'Upcoming');
   const ongoingTasks = tasks.filter(task => getTaskStatus(task) === 'Ongoing');
   const dueTasks = tasks.filter(task => getTaskStatus(task) === 'Due');
@@ -297,99 +287,54 @@ const TodoPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
   return (
     <div className="flex h-full w-full overflow-hidden">
       <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
-      <main className="flex-1 overflow-y-scroll custom-scrollbar relative">
-        <Header userName={userName} />
+      <main className="flex-1 overflow-y-scroll no-scrollbar relative">
+        
+        {/* GLOBAL HEADER WITH NOTIFICATIONS */}
+        <Header 
+          userName={userName} 
+          setActiveMenu={setActiveMenu} 
+          notifications={notifications}
+          onDismissNotification={onDismissNotification}
+          onClearAll={onClearAll}
+        />
+        
         <div className="p-6">
           <Card title="Add New Task" className="w-full max-w-4xl mx-auto !bg-slate-800/80 mb-8">
-            
-            {/* Auto-Upload Indicator */}
-            {countdown > 0 && (
-                <div className="mb-4 bg-indigo-900/50 border border-indigo-500/30 rounded-lg p-3 flex justify-between items-center animate-pulse">
-                    <div className="flex items-center gap-2 text-indigo-200">
-                        <span className="text-xl">⏳</span>
-                        <span>Uploading in <strong>{countdown}s</strong>...</span>
-                    </div>
-                    <CustomButton onClick={cancelAutoAdd} className="!bg-white/10 hover:!bg-white/20 !py-1 !px-3 text-xs">
-                        Tap to Edit / Cancel
-                    </CustomButton>
-                </div>
-            )}
-
             <form onSubmit={handleAddTask} className="space-y-4">
-              {/* Task Name + Mic */}
               <div className="flex items-center gap-4">
                 <input 
-                    type="text" 
-                    value={taskNameInput} 
-                    onChange={(e) => { setTaskNameInput(e.target.value); cancelAutoAdd(); }} 
-                    onFocus={cancelAutoAdd}
+                    type="text" value={taskNameInput} onChange={(e) => { setTaskNameInput(e.target.value); }} 
                     placeholder={isListening && activeMicField === 'name' ? "Listening..." : "Task Name*"} 
                     required 
                     className={`flex-grow p-3 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent transition-all ${isListening && activeMicField === 'name' ? 'border-red-500 animate-pulse' : ''}`} 
                 />
-                <IconButton 
-                    icon={<span className="text-xl">🎤</span>} 
-                    onClick={() => handleVoiceInput('name')} 
-                    className={`!bg-indigo-600 hover:!bg-indigo-700 !text-white ${isListening && activeMicField === 'name' ? '!bg-red-600 animate-pulse' : ''}`} 
-                    type="button" 
-                    title="Speak Task Name"
-                />
+                <IconButton icon={<span className="text-xl">🎤</span>} onClick={() => handleVoiceInput('name')} className={`!bg-indigo-600 hover:!bg-indigo-700 !text-white ${isListening && activeMicField === 'name' ? '!bg-red-600 animate-pulse' : ''}`} type="button" title="Speak Task Name" />
               </div>
 
-              {/* Description + Mic */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-start gap-4">
                   <textarea 
-                    value={descriptionInput} 
-                    onChange={(e) => { setDescriptionInput(e.target.value); cancelAutoAdd(); }} 
-                    onFocus={cancelAutoAdd}
+                    value={descriptionInput} onChange={(e) => { setDescriptionInput(e.target.value); }} 
                     placeholder={isListening && activeMicField === 'desc' ? "Listening..." : "Description (Optional)"} 
                     rows="2" 
-                    className={`flex-grow p-3 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent transition-all ${isListening && activeMicField === 'desc' ? 'border-red-500 animate-pulse' : ''}`} 
+                    className={`flex-grow p-3 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent resize-none no-scrollbar transition-all ${isListening && activeMicField === 'desc' ? 'border-red-500 animate-pulse' : ''}`} 
                   />
-                  <IconButton 
-                    icon={<span className="text-xl">🎤</span>} 
-                    onClick={() => handleVoiceInput('desc')} 
-                    className={`!bg-indigo-600 hover:!bg-indigo-700 !text-white ${isListening && activeMicField === 'desc' ? '!bg-red-600 animate-pulse' : ''}`} 
-                    type="button" 
-                    title="Speak Description"
-                />
+                  <IconButton icon={<span className="text-xl">🎤</span>} onClick={() => handleVoiceInput('desc')} className={`!bg-indigo-600 hover:!bg-indigo-700 !text-white mt-0.5 ${isListening && activeMicField === 'desc' ? '!bg-red-600 animate-pulse' : ''}`} type="button" title="Speak Description" />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                 {/* Due Date - Defaults to 1 week logic handled in handleAddTask, UI shows placeholder or empty */}
                  <div className="flex flex-col">
                     <label className="text-xs text-white/50 mb-1 ml-1">Due Date (Default: 1 Week)</label>
-                    <input 
-                        type="date" 
-                        value={dueDateInput} 
-                        onChange={(e) => { setDueDateInput(e.target.value); cancelAutoAdd(); }} 
-                        onFocus={cancelAutoAdd}
-                        className="w-full p-3 rounded-lg bg-white/10 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent" 
-                    />
+                    <input type="date" value={dueDateInput} onChange={(e) => { setDueDateInput(e.target.value); }} className="w-full p-3 rounded-lg bg-white/10 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent" />
                  </div>
-                 
                  <div className="flex flex-col">
                     <label className="text-xs text-white/50 mb-1 ml-1">Priority</label>
-                    <select 
-                        value={priorityInput} 
-                        onChange={(e) => { setPriorityInput(e.target.value); cancelAutoAdd(); }} 
-                        onFocus={cancelAutoAdd}
-                        className="w-full p-3 rounded-lg bg-white/10 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent"
-                    > 
+                    <select value={priorityInput} onChange={(e) => { setPriorityInput(e.target.value); }} className="w-full p-3 rounded-lg bg-white/10 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent cursor-pointer"> 
                         <option>Low</option> <option>Medium</option> <option>High</option> 
                     </select>
                  </div>
-
                  <div className="flex flex-col">
                     <label className="text-xs text-white/50 mb-1 ml-1">Workplace</label>
-                    <input 
-                        type="text" 
-                        value={workplaceInput} 
-                        onChange={(e) => { setWorkplaceInput(e.target.value); cancelAutoAdd(); }} 
-                        onFocus={cancelAutoAdd}
-                        placeholder="e.g., Home, Office" 
-                        className="w-full p-3 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent" 
-                    />
+                    <input type="text" value={workplaceInput} onChange={(e) => { setWorkplaceInput(e.target.value); }} placeholder="e.g., Home, Office" className="w-full p-3 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent" />
                  </div>
               </div>
 

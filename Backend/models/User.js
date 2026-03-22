@@ -5,6 +5,10 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   avatar: { type: String }, // URL or initials
+  phone: { type: String },
+  address: { type: String },
+  bio: { type: String },
+  role: { type: String, default: 'Member' },
   date: { type: Date, default: Date.now }
 });
 

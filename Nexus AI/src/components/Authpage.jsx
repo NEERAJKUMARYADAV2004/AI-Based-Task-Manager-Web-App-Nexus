@@ -29,19 +29,19 @@ const AuthPage = ({
   const logoName = "Nexus AI";
 
   return (
-    <div className="flex w-full max-w-5xl rounded-xl shadow-2xl overflow-hidden mx-auto bg-white/5 backdrop-blur-sm border border-white/10 text-white">
+    <div className="flex w-full max-w-5xl rounded-xl shadow-2xl overflow-hidden mx-auto dark:bg-white/5 bg-slate-50 backdrop-blur-sm dark:border dark:border-white/10 border border-slate-200 dark:text-white text-slate-900">
       
-      <div className="w-1/2 p-12 flex-col justify-center bg-black/10 hidden md:flex">
+      <div className="w-1/2 p-12 flex-col justify-center dark:bg-black/10 bg-slate-100 hidden md:flex">
     	  <h1 className="text-5xl font-extrabold text-red-400 mb-4">
     	    {logoName}
     	  </h1>
-  	  <p className="text-xl font-light text-white/80">
+  	  <p className="text-xl font-light dark:text-white/80 text-slate-600">
   	    {isLogin ? "Welcome Back. Your Digital World Awaits." : "Start Your Journey. Build Smarter, Faster."}
   	  </p>
   	  </div>
 
   	  <div className="w-full md:w-1/2 p-10"> 
-  	    <h2 className="text-3xl font-bold text-white mb-8 text-center">
+  	    <h2 className="text-3xl font-bold dark:text-white text-slate-900 mb-8 text-center">
     	    {isLogin ? 'Sign In' : 'Create Account'}
   	    </h2>
     	    
@@ -54,7 +54,7 @@ const AuthPage = ({
   	        value={email}
     	        onChange={(e) => setEmail(e.target.value)}
     	        required
-  	        className="w-full p-4 mt-1 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent"
+  	        className="w-full p-4 mt-1 rounded-lg dark:bg-white/10 bg-slate-100 dark:text-white text-slate-900 dark:placeholder-white/50 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent"
     	        placeholder="Email Address"
   	      />
   	      </div>
@@ -64,7 +64,7 @@ const AuthPage = ({
   	          value={password}
   	          onChange={(e) => setPassword(e.target.value)}
   	          required
-  	          className="w-full p-4 mt-1 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent"
+  	        className="w-full p-4 mt-1 rounded-lg dark:bg-white/10 bg-slate-100 dark:text-white text-slate-900 dark:placeholder-white/50 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent"
   	          placeholder="Password"
   	        />
   	      </div>
@@ -76,7 +76,7 @@ const AuthPage = ({
   	            value={confirmPassword}
   	            onChange={(e) => setConfirmPassword(e.target.value)}
   	            required
-  	            className="w-full p-4 mt-1 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent"
+  	            className="w-full p-4 mt-1 rounded-lg dark:bg-white/10 bg-slate-100 dark:text-white text-slate-900 dark:placeholder-white/50 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent"
   	            placeholder="Confirm Password"
   	          />
   	        </div>

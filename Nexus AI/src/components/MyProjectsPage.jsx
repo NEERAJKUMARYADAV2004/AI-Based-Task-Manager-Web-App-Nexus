@@ -18,7 +18,7 @@ const formatDateForInput = (date) => {
   return d.toISOString().split('T')[0];
 };
 
-const MyProjectsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
+const MyProjectsPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notifications, onDismissNotification, onClearAll }) => {
   // --- State ---
   const [projects, setProjects] = useState([]);
 
@@ -166,12 +166,17 @@ const MyProjectsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
     }
   };
 
-
   return (
     <div className="flex h-full w-full overflow-hidden">
       <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
-      <main className="flex-1 overflow-y-scroll custom-scrollbar relative">
-        <Header userName={userName} />
+      <main className="flex-1 overflow-y-scroll no-scrollbar relative">
+        <Header 
+          userName={userName} 
+          setActiveMenu={setActiveMenu}
+          notifications={notifications}
+          onDismissNotification={onDismissNotification}
+          onClearAll={onClearAll}
+        />
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-3xl font-bold text-white">My Projects</h2>
@@ -186,7 +191,7 @@ const MyProjectsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
               <h3 className="text-xl font-bold mb-4 text-white">New Project Details</h3>
               <form onSubmit={handleAddProject} className="space-y-4">
                 <input type="text" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} placeholder="Project Name*" required className="w-full p-3 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400" />
-                <textarea value={newProjectDesc} onChange={(e) => setNewProjectDesc(e.target.value)} placeholder="Description (Optional)" rows="3" className="w-full p-3 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400" />
+                <textarea value={newProjectDesc} onChange={(e) => setNewProjectDesc(e.target.value)} placeholder="Description (Optional)" rows="3" className="w-full p-3 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none no-scrollbar" />
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
@@ -199,7 +204,7 @@ const MyProjectsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
                   </div>
                    <div>
                     <label className="block text-sm text-white/70 mb-1">Priority</label>
-                    <select value={newProjectPriority} onChange={(e) => setNewProjectPriority(e.target.value)} className="w-full p-3 rounded-lg bg-white/10 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-red-400">
+                    <select value={newProjectPriority} onChange={(e) => setNewProjectPriority(e.target.value)} className="w-full p-3 rounded-lg bg-white/10 text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-400">
                       <option>Low</option>
                       <option>Medium</option>
                       <option>High</option>
@@ -207,7 +212,7 @@ const MyProjectsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
                   </div>
                   <div>
                     <label className="block text-sm text-white/70 mb-1">Status</label>
-                    <select value={newProjectStatus} onChange={(e) => setNewProjectStatus(e.target.value)} className="w-full p-3 rounded-lg bg-white/10 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-red-400">
+                    <select value={newProjectStatus} onChange={(e) => setNewProjectStatus(e.target.value)} className="w-full p-3 rounded-lg bg-white/10 text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-400">
                       <option>Not Started</option>
                       <option>In Progress</option>
                       <option>Completed</option>
@@ -229,7 +234,7 @@ const MyProjectsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
                   // --- Edit Form ---
                   <div className="space-y-3 flex flex-col flex-grow">
                     <input type="text" name="name" value={editFormData.name} onChange={handleEditFormChange} className="w-full p-2 rounded bg-white/10 text-white font-bold text-lg focus:outline-none focus:ring-1 focus:ring-red-400" required />
-                    <textarea name="description" value={editFormData.description} onChange={handleEditFormChange} rows="3" className="w-full p-2 rounded bg-white/10 text-white/90 text-sm flex-grow focus:outline-none focus:ring-1 focus:ring-red-400" />
+                    <textarea name="description" value={editFormData.description} onChange={handleEditFormChange} rows="3" className="w-full p-2 rounded bg-white/10 text-white/90 text-sm flex-grow focus:outline-none focus:ring-1 focus:ring-red-400 resize-none no-scrollbar" />
                     
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
@@ -242,7 +247,7 @@ const MyProjectsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
                       </div>
                       <div>
                          <label className="block text-xs text-white/70 mb-1">Priority</label>
-                         <select name="priority" value={editFormData.priority} onChange={handleEditFormChange} className="w-full p-2 rounded bg-white/10 text-white/90 appearance-none focus:outline-none focus:ring-1 focus:ring-red-400">
+                         <select name="priority" value={editFormData.priority} onChange={handleEditFormChange} className="w-full p-2 rounded bg-white/10 text-white/90 appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-red-400">
                              <option>Low</option>
                              <option>Medium</option>
                              <option>High</option>
@@ -250,7 +255,7 @@ const MyProjectsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
                       </div>
                       <div>
                          <label className="block text-xs text-white/70 mb-1">Status</label>
-                         <select name="status" value={editFormData.status} onChange={handleEditFormChange} className="w-full p-2 rounded bg-white/10 text-white/90 appearance-none focus:outline-none focus:ring-1 focus:ring-red-400">
+                         <select name="status" value={editFormData.status} onChange={handleEditFormChange} className="w-full p-2 rounded bg-white/10 text-white/90 appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-red-400">
                              <option>Not Started</option>
                              <option>In Progress</option>
                              <option>Completed</option>
@@ -264,7 +269,7 @@ const MyProjectsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
                   </div>
                 ) : (
                   // --- Display View ---
-                  <div className="flex flex-col flex-grow justify-between"> {/* Added justify-between */}
+                  <div className="flex flex-col flex-grow justify-between">
                     <div>
                         <div className="flex justify-between items-start mb-2">
                             <h3 className="text-lg font-bold text-white mr-2">{project.name}</h3>

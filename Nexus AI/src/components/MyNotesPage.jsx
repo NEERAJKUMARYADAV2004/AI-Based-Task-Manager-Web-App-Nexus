@@ -6,7 +6,7 @@ import { API_URL, getAuthHeaders } from '../utils/api';
 
 const formatDate = (date) => { if (!date) return ''; return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); };
 
-const MyNotesPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
+const MyNotesPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notifications, onDismissNotification, onClearAll }) => {
   const [notes, setNotes] = useState([]);
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [noteTitle, setNoteTitle] = useState('');
@@ -70,7 +70,6 @@ const MyNotesPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
     } catch (err) { console.error(err); }
   };
 
-  // ... (Rest of Handlers: handleAddNewClick, handleEditClick, handleCancel are mostly UI state changes) ...
   const handleAddNewClick = () => { setEditingNoteId(null); setNoteTitle(''); setNoteContent(''); setIsAdding(true); };
   const handleEditClick = (note) => { setEditingNoteId(note._id); setNoteTitle(note.title); setNoteContent(note.content); setIsAdding(true); };
   const handleCancel = () => { setEditingNoteId(null); setNoteTitle(''); setNoteContent(''); setIsAdding(false); };
@@ -78,8 +77,14 @@ const MyNotesPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
   return (
     <div className="flex h-full w-full overflow-hidden">
       <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
-      <main className="flex-1 overflow-y-scroll custom-scrollbar relative">
-        <Header userName={userName} />
+      <main className="flex-1 overflow-y-scroll no-scrollbar relative">
+        <Header 
+          userName={userName} 
+          setActiveMenu={setActiveMenu}
+          notifications={notifications}
+          onDismissNotification={onDismissNotification}
+          onClearAll={onClearAll}
+        />
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-3xl font-bold text-white">My Notes</h2>
@@ -87,11 +92,10 @@ const MyNotesPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
           </div>
           {isAdding && (
             <Card className="mb-8 !bg-slate-800/80">
-              {/* ... (Form Inputs) ... */}
               <h3 className="text-xl font-bold mb-4 text-white">{editingNoteId !== null ? 'Edit Note' : 'Add New Note'}</h3>
               <form onSubmit={handleSaveNote} className="space-y-4">
                 <input type="text" value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)} placeholder="Note Title (Optional)" className="w-full p-3 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400" />
-                <textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} placeholder="Start writing your note..." required rows="6" className="w-full p-3 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400" />
+                <textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} placeholder="Start writing your note..." required rows="6" className="w-full p-3 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none no-scrollbar" />
                 <div className="flex justify-end gap-3">
                    <CustomButton type="button" onClick={handleCancel} className="!bg-gray-500 hover:!bg-gray-600">Cancel</CustomButton>
                    <CustomButton type="submit" className="!bg-green-600 hover:!bg-green-700">{editingNoteId !== null ? 'Save Changes' : 'Save Note'}</CustomButton>
@@ -102,7 +106,6 @@ const MyNotesPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {notes.map((note) => (
               <Card key={note._id} className="flex flex-col !h-auto min-h-[150px]" glass={true}>
-                  {/* ... (Display logic using note._id) ... */}
                   <div className="flex justify-between items-start mb-2">
                       <h3 className="text-lg font-bold text-white mr-2 flex-grow break-words">{note.title || <span className="text-white/60 italic">Untitled</span>}</h3>
                       <div className="flex gap-1 flex-shrink-0">

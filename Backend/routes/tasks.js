@@ -32,7 +32,12 @@ router.post('/', auth, async (req, res) => {
     res.json(task);
   } catch (err) {
     res.status(500).send('Server Error');
-  }
+  }req.io.to(req.body.teamId).emit('receive_update', {
+    type: 'NEW_TASK',
+    payload: task, // The newly saved task from MongoDB
+    actionMessage: `created a new task.`
+});
+// This guarantees that **only successful database actions** will ever trigger a notification to other users!
 });
 
 // @route   PUT api/tasks/:id

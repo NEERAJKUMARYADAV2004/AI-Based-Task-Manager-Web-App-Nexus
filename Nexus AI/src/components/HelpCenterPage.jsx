@@ -117,7 +117,7 @@ const HelpCenterPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
       <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
 
       <main className="flex-1 overflow-y-scroll custom-scrollbar relative">
-        <Header userName={userName} />
+        <Header userName={userName} setActiveMenu={setActiveMenu} />
 
         <div className="p-6 max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-white mb-6">Help Center</h2>

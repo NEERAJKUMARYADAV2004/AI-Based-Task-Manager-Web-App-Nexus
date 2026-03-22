@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CustomButton, IconButton } from './UI';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
 // --- WIDGETS ---
-
 const OverallInformation = ({ data }) => {
   const totalTasks = data.overallTasksDone || 0;
   const dailyStats = data.dailyStats || [];
@@ -86,7 +85,6 @@ const TaskProgressChart = ({ data }) => {
       <div className="flex justify-between items-end h-32 md:h-40 mb-4 flex-grow px-2">
         {days.map((item, index) => (
           <div key={index} className="flex flex-col items-center h-full w-1/7 justify-end group relative">
-             {/* Tooltip for exact status */}
              <div className="absolute bottom-full mb-2 hidden group-hover:block bg-black text-white text-xs p-1 rounded z-10 whitespace-nowrap">
                 {item.status}
              </div>
@@ -119,7 +117,6 @@ const TaskProgressChart = ({ data }) => {
   );
 };
 
-// --- UPDATED: ProjectsCard to handle redirection on + click ---
 const ProjectsCard = ({ data, setActiveMenu }) => (
   <Card title="Ongoing Projects" className="lg:col-span-2 h-full flex flex-col">
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 flex-grow">
@@ -141,7 +138,7 @@ const ProjectsCard = ({ data, setActiveMenu }) => (
         </div>
       ))}
       <button 
-        onClick={() => setActiveMenu('projects')} // Redirects to My Projects page
+        onClick={() => setActiveMenu('projects')}
         className="flex items-center justify-center bg-white/10 rounded-lg text-white/50 text-4xl hover:bg-white/20 transition-colors duration-200 h-full min-h-[120px]"
       >
         +
@@ -153,7 +150,7 @@ const ProjectsCard = ({ data, setActiveMenu }) => (
 const NoteCard = ({ data }) => (
   <Card title="Today's Note" className="col-span-1 flex flex-col h-full">
     <div className="flex-grow flex flex-col items-center justify-center overflow-hidden">
-      <p className="text-white/90 text-base italic text-center overflow-y-auto max-h-[120px] custom-scrollbar p-2 w-full">
+      <p className="text-white/90 text-base italic text-center overflow-y-auto max-h-[120px] no-scrollbar p-2 w-full">
         "{data.todayNote || "No note set for today."}"
       </p>
     </div>
@@ -170,13 +167,11 @@ const TaskCard = ({ data }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            
             <div className="flex-grow text-center px-2">
                 <span className="text-lg md:text-xl font-semibold block line-clamp-2">
                     {data.todayTask?.title || "No tasks for today"}
                 </span>
             </div>
-    
             <button className="p-2 rounded-full text-red-400 hover:text-white transition-colors duration-200 bg-white/10 hover:bg-red-600/50">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -197,29 +192,39 @@ const DashboardView = ({
   activeMenu,
   setActiveMenu,
   onSignOut,
-  userName
+  userName,
+  userAvatar,     // <--- ADDED THIS HERE
+  notifications,
+  onDismissNotification,
+  onClearAll
 }) => (
   <div className="flex h-full w-full overflow-hidden">
     <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
-    <main className="flex-1 overflow-y-scroll custom-scrollbar relative">
-      <Header userName={userName} setActiveMenu={setActiveMenu} />
+    <main className="flex-1 overflow-y-scroll no-scrollbar relative">
+      
+      {/* GLOBAL HEADER WITH NOTIFICATIONS AND AVATAR */}
+      <Header 
+        userName={userName} 
+        userAvatar={userAvatar}   
+        setActiveMenu={setActiveMenu} 
+        notifications={notifications}
+        onDismissNotification={onDismissNotification}
+        onClearAll={onClearAll}
+      />
       
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-6 pb-24">
-    
         {/* Row 1 */}
         <OverallInformation data={dashboardData} />
         <CalendarWidget data={dashboardData} />
         <TaskProgressChart data={dashboardData} />
         
         {/* Row 2 */}
-        <ProjectsCard data={dashboardData} setActiveMenu={setActiveMenu} /> {/* Passed setActiveMenu */}
-        
-        {/* Row 2 (cont'd) */}
+        <ProjectsCard data={dashboardData} setActiveMenu={setActiveMenu} />
         <NoteCard data={dashboardData} />
         <TaskCard data={dashboardData} />
 
-        {/* Row 3 - Additional Placeholders */}
+        {/* Row 3 */}
         <Card title="Project Progress" className="lg:col-span-2 h-full flex flex-col min-h-[200px]">
             <div className="h-full bg-white/5 rounded-lg flex flex-col items-center justify-center text-white/50 text-sm p-4">
               <div className="w-24 h-24 rounded-full border-4 border-indigo-500/30 border-t-indigo-500 mb-2"></div>
@@ -227,10 +232,10 @@ const DashboardView = ({
             </div>
         </Card>
 
-        {/* UPDATED: Centered Content in Quick Actions */}
+        {/* Quick Actions */}
         <Card title="Quick Actions" className="lg:col-span-2 h-full min-h-[200px]">
-           <div className="flex items-center justify-center h-full w-full"> {/* Centering Container */}
-               <div className="grid grid-cols-2 gap-6 w-full max-w-md"> {/* Constrained width for centering look */}
+           <div className="flex items-center justify-center h-full w-full">
+               <div className="grid grid-cols-2 gap-6 w-full max-w-md">
                    <button 
                      onClick={() => setActiveMenu('notes')}
                      className="flex flex-col items-center justify-center bg-white/5 rounded-lg hover:bg-white/10 transition-colors p-6 border border-white/10"
@@ -248,14 +253,8 @@ const DashboardView = ({
                </div>
            </div>
         </Card>
-
-        <footer className="text-right text-sm text-white/50 pt-4 mt-8 lg:col-span-4">
-            {/* Footer content if any */}
-        </footer>
       </div>
     </main>
-    
-    {/* Global Chatbot is handled in App.jsx, no need to add here */}
   </div>
 );
 

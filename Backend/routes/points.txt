@@ -1,0 +1,11 @@
+Things to do:-
+
+1. isAdmin {
+    create edit and delete the member and its role.
+    create edit and delete the team and its details.
+}
+
+2. Profile image needs to be updated on every page.
+    
+
+3. Use Only Line Art Icons Only. No use of animated icons.

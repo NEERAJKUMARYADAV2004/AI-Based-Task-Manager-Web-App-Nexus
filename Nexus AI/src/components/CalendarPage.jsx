@@ -138,7 +138,7 @@ const CalendarPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
         <div className="flex h-full w-full overflow-hidden">
             <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
             <main className="flex-1 flex flex-col overflow-hidden custom-scrollbar relative">
-                <Header userName={userName} />
+                <Header userName={userName} setActiveMenu={setActiveMenu} />
                 <div className="flex-grow p-6 bg-white/5 backdrop-blur-sm border border-white/10 m-6 rounded-xl shadow-xl overflow-auto custom-scrollbar">
                     <DnDCalendar
                         localizer={localizer}

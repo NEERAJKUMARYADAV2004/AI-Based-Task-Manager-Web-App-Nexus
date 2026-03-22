@@ -40,7 +40,7 @@ export const CustomButton = ({
     disabled={disabled}
     className={
       `px-5 py-2 rounded-lg font-semibold text-white transition-all duration-300 
-      bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500/50 
+      bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500/50 cursor-pointer
       ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`
     }
   >
@@ -57,7 +57,7 @@ export const IconButton = ({
     onClick={onClick}
     className={
       `p-2.5 rounded-full text-indigo-400 hover:text-white transition-colors duration-200
-       bg-white/5 backdrop-blur-sm hover:bg-indigo-600/50 ${className}`
+       bg-white/5 backdrop-blur-sm hover:bg-indigo-600/50 cursor-pointer ${className}`
     }
   >
     {icon}
