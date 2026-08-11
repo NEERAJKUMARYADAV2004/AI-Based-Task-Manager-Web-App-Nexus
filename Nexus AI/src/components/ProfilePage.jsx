@@ -5,7 +5,7 @@ import Header from './Header';
 import { API_URL, getAuthHeaders } from '../utils/api';
 import { Camera } from 'lucide-react';
 
-const ProfilePage = ({ activeMenu, setActiveMenu, onSignOut, userName, setUserName, userAvatar, setUserAvatar, notifications, onDismissNotification, onClearAll }) => {
+const ProfilePage = ({ activeMenu, setActiveMenu, onSignOut, userName, setUserName, userAvatar, setUserAvatar, notifications, onDismissNotification, onClearAll, isMobileMenuOpen, setIsMobileMenuOpen, onNotifAction }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   
@@ -157,7 +157,7 @@ const ProfilePage = ({ activeMenu, setActiveMenu, onSignOut, userName, setUserNa
   if (loading) {
     return (
       <div className="flex h-full w-full overflow-hidden bg-slate-900">
-        <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
+        <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
         <main className="flex-1 flex items-center justify-center text-white">
           <div className="animate-pulse flex flex-col items-center">
              <div className="h-12 w-12 border-4 border-red-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -174,7 +174,7 @@ const ProfilePage = ({ activeMenu, setActiveMenu, onSignOut, userName, setUserNa
 
   return (
     <div className="flex h-full w-full overflow-hidden">
-      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
+      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
       
       <main className="flex-1 overflow-y-scroll no-scrollbar relative bg-[#0f172a]">
         <Header 
@@ -184,6 +184,9 @@ const ProfilePage = ({ activeMenu, setActiveMenu, onSignOut, userName, setUserNa
           notifications={notifications}
           onDismissNotification={onDismissNotification}
           onClearAll={onClearAll}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          onNotifAction={onNotifAction}
         />
         
         <div className="p-6 max-w-6xl mx-auto pb-24 mt-4">

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CustomButton, IconButton } from './UI';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import { Calendar, MessageSquare, Edit2, Trash2, Plus, Users, UserPlus, Mic, X } from 'lucide-react';
+import { Calendar, MessageSquare, Edit2, Trash2, Plus, Users, UserPlus, Mic, X, User, Clock, Check } from 'lucide-react';
+import NexusIcon from './NexusIcon';
 import { API_URL, getAuthHeaders } from '../utils/api';
 import { io } from 'socket.io-client';
 
@@ -44,7 +45,7 @@ const InputGrp = ({ label, children }) => (
     </div>
 );
 
-const CollaborationPage = ({ activeMenu, setActiveMenu, onSignOut, userName, userAvatar, notifications, onDismissNotification, onClearAll }) => { // <--- ADDED userAvatar HERE
+const CollaborationPage = ({ activeMenu, setActiveMenu, onSignOut, userName, userAvatar, notifications, onDismissNotification, onClearAll, isMobileMenuOpen, setIsMobileMenuOpen, onNotifAction }) => { // <--- ADDED userAvatar HERE
     // --- STATE ---
     const [currentUser, setCurrentUser] = useState(null);
     const [teams, setTeams] = useState([]);
@@ -101,8 +102,24 @@ const CollaborationPage = ({ activeMenu, setActiveMenu, onSignOut, userName, use
             } catch (e) { console.error("Initialization error", e); }
         };
 
+        const fetchOnlyTeams = async () => {
+            try {
+                const teamsRes = await fetch(`${API_URL}/teams`, { headers: getAuthHeaders() });
+                if (teamsRes.ok) {
+                    const data = await teamsRes.json();
+                    setTeams(data);
+                    localStorage.setItem('nexus-collab-teams', JSON.stringify(data));
+                }
+            } catch (e) { console.error("Team refetch error", e); }
+        };
+
         initFetch();
-        return () => newSocket.close();
+        window.addEventListener('nexus-teams-updated', fetchOnlyTeams);
+
+        return () => {
+            newSocket.close();
+            window.removeEventListener('nexus-teams-updated', fetchOnlyTeams);
+        };
     }, []);
 
     // --- ROOM JOINING & REAL-TIME LISTENER ---
@@ -272,14 +289,17 @@ const CollaborationPage = ({ activeMenu, setActiveMenu, onSignOut, userName, use
     const handleAddMember = async () => {
         const email = newMemberEmail.trim();
         if (!email.includes('@')) return alert("Valid email required.");
-        const newMember = { _id: `temp-${Date.now()}`, name: email.split('@')[0], email, avatar: '👤', role: newMemberRole };
+        const newMember = { _id: `temp-${Date.now()}`, name: email.split('@')[0], email, avatar: '', role: newMemberRole };
         
         if (viewState === 'createTeam') setStagedMembers([...stagedMembers, newMember]);
         else if (isOwner) {
             const updatedMembers = [...(currentTeam.members || []), newMember];
             try {
                 const res = await fetch(`${API_URL}/teams/${selectedTeamId}`, { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify({ members: updatedMembers }) });
-                if (res.ok) setTeams(safeTeams.map(t => (t._id || t.id) === selectedTeamId ? { ...t, members: updatedMembers } : t));
+                if (res.ok) {
+                    const data = await res.json();
+                    setTeams(safeTeams.map(t => (t._id || t.id) === selectedTeamId ? data : t));
+                }
             } catch (e) { console.error(e); }
         }
         setNewMemberEmail(''); setNewMemberRole('Viewer');
@@ -291,7 +311,10 @@ const CollaborationPage = ({ activeMenu, setActiveMenu, onSignOut, userName, use
             const updatedMembers = (currentTeam.members || []).filter(m => (m._id || m.id) !== memberId);
             try {
                 const res = await fetch(`${API_URL}/teams/${selectedTeamId}`, { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify({ members: updatedMembers }) });
-                if (res.ok) setTeams(safeTeams.map(t => (t._id || t.id) === selectedTeamId ? { ...t, members: updatedMembers } : t));
+                if (res.ok) {
+                    const data = await res.json();
+                    setTeams(safeTeams.map(t => (t._id || t.id) === selectedTeamId ? data : t));
+                }
             } catch (e) { console.error(e); }
         }
     };
@@ -302,7 +325,10 @@ const CollaborationPage = ({ activeMenu, setActiveMenu, onSignOut, userName, use
             const updatedMembers = (currentTeam.members || []).map(m => (m._id || m.id) === memberId ? { ...m, role: newRole } : m);
             try {
                 const res = await fetch(`${API_URL}/teams/${selectedTeamId}`, { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify({ members: updatedMembers }) });
-                if (res.ok) setTeams(safeTeams.map(t => (t._id || t.id) === selectedTeamId ? { ...t, members: updatedMembers } : t));
+                if (res.ok) {
+                    const data = await res.json();
+                    setTeams(safeTeams.map(t => (t._id || t.id) === selectedTeamId ? data : t));
+                }
             } catch (e) { console.error(e); }
         }
     };
@@ -405,6 +431,23 @@ const CollaborationPage = ({ activeMenu, setActiveMenu, onSignOut, userName, use
                 }
             } catch (e) { console.error(e); }
         }
+        if (action === 'statusChange' && canWrite) { 
+            try {
+                const res = await fetch(`${API_URL}/tasks/${id}`, { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify({ status: val }) });
+                if (res.ok) {
+                    const updatedTask = await res.json();
+                    const parsedUpdated = { ...updatedTask, dueDate: new Date(updatedTask.dueDate) };
+                    setTasks(prev => (Array.isArray(prev)?prev:[]).map(t => (t._id || t.id) === id ? parsedUpdated : t));
+                    if ((selectedTask?._id || selectedTask?.id) === id) setSelectedTask(parsedUpdated); 
+                    
+                    socket?.emit('send_update', { 
+                        teamId: selectedTeamId, type: 'UPDATE_TASK', payload: updatedTask,
+                        senderId: currentUser?._id, senderName: currentUser?.name,
+                        actionMessage: `changed status of "${targetTask?.taskName}" to ${val}.`
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
     };
 
     // --- REAL-TIME CHAT (COMMENTS) HANDLER ---
@@ -465,23 +508,37 @@ const CollaborationPage = ({ activeMenu, setActiveMenu, onSignOut, userName, use
         </select>
     );
 
+    const renderStatusSelect = (task) => (
+        <select 
+            value={task.status || 'Not Started'} 
+            disabled={!canWrite} 
+            onChange={(e) => handleAction('statusChange', task._id || task.id, e.target.value)} 
+            onClick={e => e.stopPropagation()} 
+            className={`text-[9px] px-2.5 py-0.5 rounded-full font-extrabold tracking-widest uppercase flex-shrink-0 focus:outline-none cursor-pointer appearance-none text-center ${STATUS_STYLES[task.status] || STATUS_STYLES['Not Started']}`}
+        >
+            <option value="Not Started" className="bg-slate-800 text-white">Not Started</option>
+            <option value="In Progress" className="bg-slate-800 text-white">In Progress</option>
+            <option value="Completed" className="bg-slate-800 text-white">Completed</option>
+        </select>
+    );
+
     const renderTaskCard = (task) => {
         const taskId = task._id || task.id;
         const assignee = currentTeamMembers.find(m => (m._id || m.id) === task.assignedTo);
         return (
-            <div key={taskId} onClick={() => { setSelectedTask(task); setViewState('taskDetails'); }} className="collab-task-card bg-[#1e293b]/80 hover:bg-[#1e293b] rounded-[16px] p-5 flex flex-col h-[170px] cursor-pointer transition-all relative group border border-slate-700/50 hover:border-slate-500/70 shadow-sm">
+            <div key={taskId} onClick={() => { setSelectedTask(task); setViewState('taskDetails'); }} className="collab-task-card bg-[#1e293b]/80 hover:bg-[#1e293b] rounded-[16px] p-5 flex flex-col min-h-[170px] h-auto cursor-pointer transition-all relative group border border-slate-700/50 hover:border-slate-500/70 shadow-sm">
                 <div className="flex justify-between items-start mb-2 gap-3">
                     <h4 className="font-bold text-[16px] text-white leading-snug break-words pr-1 line-clamp-2">{task.taskName || task.title || 'Untitled Task'}</h4>
-                    <span className={`text-[9px] px-2.5 py-0.5 rounded-full font-extrabold tracking-widest uppercase flex-shrink-0 ${STATUS_STYLES[task.status] || STATUS_STYLES['Not Started']}`}>{task.status}</span>
+                    {renderStatusSelect(task)}
                 </div>
-                <p className="text-[13px] text-slate-400 mb-3 flex-grow line-clamp-1 leading-relaxed">{task.description || <span className="italic text-slate-600">No description.</span>}</p>
+                <p className="text-[13px] text-slate-400 mb-3 flex-grow line-clamp-3 leading-relaxed">{task.description || <span className="italic text-slate-600">No description.</span>}</p>
                 <div className="flex items-center gap-3 mb-4">
                     <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-widest flex-shrink-0 ${PRIORITY_STYLES[task.priority]}`}>{task.priority}</span>
                     <span className="flex items-center gap-1.5 text-[12px] text-slate-400 font-medium"><Calendar size={13} className="opacity-80"/> {formatDate(task.dueDate)}</span>
                 </div>
                 <div className="mt-auto pt-3.5 border-t border-slate-700/40 flex justify-between items-center">
                     <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] flex-shrink-0 ${assignee ? 'bg-slate-800 border border-slate-600' : 'unassigned-avatar border border-dashed border-slate-600 text-slate-500'}`}>{assignee ? (assignee.avatar || '👤') : '?'}</div>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] flex-shrink-0 ${assignee ? 'bg-slate-800 border border-slate-600' : 'unassigned-avatar border border-dashed border-slate-600 text-slate-500'}`}>{assignee ? (assignee.avatar || <User size={12} />) : '?'}</div>
                         {renderAssigneeSelect(task, `text-[12px] max-w-[80px] truncate ${!assignee && 'italic text-slate-500'}`)}
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-500" title="Comments"><MessageSquare size={14} strokeWidth={1.5} /> <span className="text-[12px] font-medium">{task.comments?.length || 0}</span></div>
@@ -636,7 +693,7 @@ const CollaborationPage = ({ activeMenu, setActiveMenu, onSignOut, userName, use
 
     return (
         <div className="flex h-full w-full overflow-hidden collab-page-container font-sans bg-[#0f172a]">
-            <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
+            <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
             <main className="flex-1 flex flex-col overflow-hidden relative bg-[#0f172a]">
                 
                 {/* PASS NOTIFICATIONS & HANDLERS TO HEADER */}
@@ -647,6 +704,10 @@ const CollaborationPage = ({ activeMenu, setActiveMenu, onSignOut, userName, use
                   notifications={notifications}
                   onDismissNotification={onDismissNotification}
                   onClearAll={onClearAll}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          onNotifAction={onNotifAction}
+                  onNotifAction={onNotifAction}
                 />
                 
                 <div className="flex-1 flex overflow-hidden relative">
@@ -707,7 +768,7 @@ const CollaborationPage = ({ activeMenu, setActiveMenu, onSignOut, userName, use
                                              <ul className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar pr-2">
                                                  {(viewState === 'createTeam' ? stagedMembers : currentTeamMembers).map(m => (
                                                      <li key={m._id || m.id} className="collab-input flex items-center justify-between bg-[#0f172a] p-2.5 rounded-[10px] border border-white/5">
-                                                         <div className="flex items-center gap-3"><div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-[11px] overflow-hidden">{m.avatar && m.avatar.length > 5 ? <img src={m.avatar} alt="Profile" className="w-full h-full object-cover" /> : (m.name?.[0] || '👤')}</div><div className="flex flex-col"><span className="text-[13px] font-medium text-white">{m.name}</span><span className="text-[10px] text-slate-400">{m.email}</span></div></div>
+                                                         <div className="flex items-center gap-3"><div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-[11px] overflow-hidden">{m.avatar && m.avatar.length > 5 ? <img src={m.avatar} alt="Profile" className="w-full h-full object-cover" /> : (m.name?.[0] || <User size={14} />)}</div><div className="flex flex-col"><span className="text-[13px] font-medium text-white flex items-center gap-1.5">{m.name} {m.status === 'Pending' ? <Clock size={12} className="text-amber-400" title="Pending" /> : m.status === 'Rejected' ? <X size={12} className="text-red-400" title="Rejected" /> : <Check size={12} className="text-emerald-400/50" title="Accepted" />}</span><span className="text-[10px] text-slate-400">{m.email}</span></div></div>
                                                          <div className="flex items-center gap-2">
                                                              <select value={m.role || 'Viewer'} onChange={e => handleChangeMemberRole(m._id || m.id, e.target.value)} disabled={(m._id || m.id) === currentUser?._id} className="bg-transparent text-[11px] font-medium text-slate-300 p-1 rounded border border-white/10 focus:outline-none cursor-pointer appearance-none px-1.5"><option value="Viewer">Viewer</option><option value="Editor">Editor</option><option value="Owner">Owner</option></select>
                                                              {(m._id || m.id) !== currentUser?._id && <button onClick={() => handleRemoveMember(m._id || m.id)} className="delete-icon p-1 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"><Trash2 size={13}/></button>}
@@ -775,13 +836,13 @@ const CollaborationPage = ({ activeMenu, setActiveMenu, onSignOut, userName, use
                         <div className="mb-5"><p className="text-[11px] text-slate-400 font-medium">You are: <span className="text-red-400 font-bold ml-1">{userRole}</span></p></div>
                         <ul className="space-y-3 overflow-y-auto custom-scrollbar pr-2">
                             {currentTeamMembers.map(m => (
-                                <li key={m._id || m.id} className="flex items-center gap-3 text-[13px] group"><div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-[14px] border border-slate-700 group-hover:border-slate-500 transition-colors overflow-hidden">{m.avatar && m.avatar.length > 5 ? <img src={m.avatar} alt="Profile" className="w-full h-full object-cover" /> : (m.name?.[0] || '👤')}</div><div className="flex-grow"><div className="font-semibold text-white/90 group-hover:text-white transition-colors">{m.name}</div><div className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">{m.role}</div></div></li>
+                                <li key={m._id || m.id} className="flex items-center gap-3 text-[13px] group"><div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-[14px] border border-slate-700 group-hover:border-slate-500 transition-colors overflow-hidden">{m.avatar && m.avatar.length > 5 ? <img src={m.avatar} alt="Profile" className="w-full h-full object-cover" /> : (m.name?.[0] || <User size={16} />)}</div><div className="flex-grow"><div className="font-semibold text-white/90 group-hover:text-white transition-colors flex items-center gap-1.5">{m.name} {m.status === 'Pending' ? <Clock size={12} className="text-amber-400" title="Pending" /> : m.status === 'Rejected' ? <X size={12} className="text-red-400" title="Rejected" /> : <Check size={12} className="text-emerald-400/50" title="Accepted" />}</div><div className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">{m.role}</div></div></li>
                             ))}
                         </ul>
                     </div>
                 </div>
             </main>
-            <div className="fixed bottom-6 right-6 z-50"><IconButton icon={<span className="text-xl">🤖</span>} className="w-14 h-14 !bg-red-600 hover:!bg-red-700 !text-white !shadow-lg !shadow-red-500/50" onClick={() => alert("Nexus AI!")} /></div>
+            <div className="fixed bottom-6 right-6 z-50"><IconButton icon={<NexusIcon size={28} />} className="w-14 h-14 !text-white !shadow-lg transition-all duration-300 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 !shadow-indigo-500/40 hover:scale-105" onClick={() => alert("Nexus AI!")} /></div>
             
             <style>{`
                 .text-center-last { text-align-last: center; }

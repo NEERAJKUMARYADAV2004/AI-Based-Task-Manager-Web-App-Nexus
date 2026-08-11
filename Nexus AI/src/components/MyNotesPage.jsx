@@ -6,7 +6,7 @@ import { API_URL, getAuthHeaders } from '../utils/api';
 
 const formatDate = (date) => { if (!date) return ''; return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); };
 
-const MyNotesPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notifications, onDismissNotification, onClearAll }) => {
+const MyNotesPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notifications, onDismissNotification, onClearAll, isMobileMenuOpen, setIsMobileMenuOpen, onNotifAction }) => {
   const [notes, setNotes] = useState([]);
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [noteTitle, setNoteTitle] = useState('');
@@ -76,7 +76,7 @@ const MyNotesPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notificat
 
   return (
     <div className="flex h-full w-full overflow-hidden">
-      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
+      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
       <main className="flex-1 overflow-y-scroll no-scrollbar relative">
         <Header 
           userName={userName} 
@@ -84,6 +84,9 @@ const MyNotesPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notificat
           notifications={notifications}
           onDismissNotification={onDismissNotification}
           onClearAll={onClearAll}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          onNotifAction={onNotifAction}
         />
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">

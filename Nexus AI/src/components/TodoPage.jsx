@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CustomButton, IconButton } from './UI';
+import { Mic } from 'lucide-react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { API_URL, getAuthHeaders } from '../utils/api';
@@ -81,7 +82,7 @@ const TaskItem = ({ task, isEditing, editFormData, handleToggleComplete, handleE
     );
 };
 
-const TodoPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notifications, onDismissNotification, onClearAll }) => {
+const TodoPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notifications, onDismissNotification, onClearAll, isMobileMenuOpen, setIsMobileMenuOpen, onNotifAction }) => {
   const [tasks, setTasks] = useState([]);
   const [taskNameInput, setTaskNameInput] = useState('');
   const [descriptionInput, setDescriptionInput] = useState('');
@@ -286,7 +287,7 @@ const TodoPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notification
 
   return (
     <div className="flex h-full w-full overflow-hidden">
-      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
+      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
       <main className="flex-1 overflow-y-scroll no-scrollbar relative">
         
         {/* GLOBAL HEADER WITH NOTIFICATIONS */}
@@ -296,6 +297,9 @@ const TodoPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notification
           notifications={notifications}
           onDismissNotification={onDismissNotification}
           onClearAll={onClearAll}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          onNotifAction={onNotifAction}
         />
         
         <div className="p-6">
@@ -308,7 +312,7 @@ const TodoPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notification
                     required 
                     className={`flex-grow p-3 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent transition-all ${isListening && activeMicField === 'name' ? 'border-red-500 animate-pulse' : ''}`} 
                 />
-                <IconButton icon={<span className="text-xl">🎤</span>} onClick={() => handleVoiceInput('name')} className={`!bg-indigo-600 hover:!bg-indigo-700 !text-white ${isListening && activeMicField === 'name' ? '!bg-red-600 animate-pulse' : ''}`} type="button" title="Speak Task Name" />
+                <IconButton icon={<Mic size={20} />} onClick={() => handleVoiceInput('name')} className={`!bg-indigo-600 hover:!bg-indigo-700 !text-white ${isListening && activeMicField === 'name' ? '!bg-red-600 animate-pulse' : ''}`} type="button" title="Speak Task Name" />
               </div>
 
               <div className="flex items-start gap-4">
@@ -318,7 +322,7 @@ const TodoPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notification
                     rows="2" 
                     className={`flex-grow p-3 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent resize-none no-scrollbar transition-all ${isListening && activeMicField === 'desc' ? 'border-red-500 animate-pulse' : ''}`} 
                   />
-                  <IconButton icon={<span className="text-xl">🎤</span>} onClick={() => handleVoiceInput('desc')} className={`!bg-indigo-600 hover:!bg-indigo-700 !text-white mt-0.5 ${isListening && activeMicField === 'desc' ? '!bg-red-600 animate-pulse' : ''}`} type="button" title="Speak Description" />
+                  <IconButton icon={<Mic size={20} />} onClick={() => handleVoiceInput('desc')} className={`!bg-indigo-600 hover:!bg-indigo-700 !text-white mt-0.5 ${isListening && activeMicField === 'desc' ? '!bg-red-600 animate-pulse' : ''}`} type="button" title="Speak Description" />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

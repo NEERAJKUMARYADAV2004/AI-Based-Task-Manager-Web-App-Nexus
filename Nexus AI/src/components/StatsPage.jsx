@@ -1,6 +1,7 @@
-import { mockDashboardData } from '../data/mockData';
+// Replaced mock data import with empty state initialization
 import React from 'react';
 import { Card, CustomButton, IconButton } from './UI'; // Assuming UI.jsx exists
+import NexusIcon from './NexusIcon';
 import Sidebar from './Sidebar'; // Assuming Sidebar.jsx exists
 import Header from './Header'; // Assuming Header.jsx exists
 
@@ -55,10 +56,14 @@ const WeeklyProgressChart = ({ data, title = "Weekly Task Progress" }) => {
 };
 
 
-const StatsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
+const StatsPage = ({ dashboardData, activeMenu, setActiveMenu, onSignOut, userName }) => {
 
-  // Use the imported mock data
-  const statsData = mockDashboardData;
+  // Use dynamically calculated dashboardData from App.jsx
+  const statsData = dashboardData || {
+    overallTasksDone: 0,
+    dailyStats: [],
+    taskProgress: []
+  };
 
   const totalTasks = statsData.overallTasksDone || 0;
   const dailyStats = statsData.dailyStats || [];
@@ -69,7 +74,7 @@ const StatsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
 
   return (
     <div className="flex h-full w-full overflow-hidden">
-      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
+      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
 
       {/* Main content area for Stats */}
       <main className="flex-1 overflow-y-scroll custom-scrollbar relative">
@@ -123,8 +128,8 @@ const StatsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
         {/* Floating AI Button */}
         <div className="fixed bottom-6 right-6 z-50">
           <IconButton
-            icon={<span className="text-2xl">🤖</span>}
-            className="w-16 h-16 !bg-red-600 hover:!bg-red-700 !text-white !shadow-lg !shadow-red-500/50"
+            icon={<NexusIcon size={28} />}
+            className="w-16 h-16 !text-white !shadow-lg transition-all duration-300 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 !shadow-indigo-500/40 hover:scale-105"
             onClick={() => alert("Nexus AI Clicked!")}
           />
         </div>

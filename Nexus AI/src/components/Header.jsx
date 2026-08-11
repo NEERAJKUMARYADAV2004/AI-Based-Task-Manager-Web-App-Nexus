@@ -3,7 +3,7 @@ import { CustomButton } from './UI';
 import { Bell, Plus, X, MessageSquare, Edit2, Trash2, Info } from 'lucide-react';
 import ProfilePage from './ProfilePage';
 
-const Header = ({ userName = 'Chief', setActiveMenu, notifications = [], onDismissNotification, onClearAll }) => {
+const Header = ({ userName = 'Chief', setActiveMenu, notifications = [], onDismissNotification, onClearAll, onNotifAction, isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const wrapperRef = useRef(null);
   
@@ -40,9 +40,20 @@ const Header = ({ userName = 'Chief', setActiveMenu, notifications = [], onDismi
 
   return (
     <header className="sticky top-0 z-40 flex justify-between items-center p-5 bg-[#0a0f1c]/80 backdrop-blur-xl border-b border-white/5 transition-colors duration-300">
-      <h2 className="text-2xl font-extrabold text-white tracking-tight">
-        Welcome Back, {userName}!
-      </h2>
+      <div className="flex items-center gap-4">
+        {/* HAMBURGER MENU BUTTON (Visible on screens smaller than xl) */}
+        <button 
+          className="xl:hidden flex flex-col justify-center items-center w-8 h-8 group hover:bg-white/5 rounded-md transition-colors"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          <div className={`w-5 h-0.5 bg-white rounded-full transition-all duration-300 ${isMobileMenuOpen ? 'rotate-45 translate-y-1.5' : '-translate-y-1'}`}></div>
+          <div className={`h-0.5 bg-white rounded-full transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0 w-5' : 'w-3 opacity-100'}`}></div>
+          <div className={`w-5 h-0.5 bg-white rounded-full transition-all duration-300 ${isMobileMenuOpen ? '-rotate-45 -translate-y-1.5' : 'translate-y-1'}`}></div>
+        </button>
+        <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
+          Welcome Back, {userName}!
+        </h2>
+      </div>
       
       <div className="flex items-center space-x-6">
         <div className="text-white/60 text-sm font-medium hidden sm:block tracking-wide">
@@ -51,11 +62,11 @@ const Header = ({ userName = 'Chief', setActiveMenu, notifications = [], onDismi
         
         {/* ADD TASK BUTTON */}
         <CustomButton 
-          className="text-sm px-5 py-2.5 flex items-center gap-2 !bg-indigo-600 hover:!bg-indigo-700 text-[#ffffff] shadow-lg shadow-indigo-500/20 transition-all font-semibold rounded-xl"
+          className="text-sm px-4 py-2 md:px-5 md:py-2.5 flex items-center gap-2 !bg-indigo-600 hover:!bg-indigo-700 text-[#ffffff] shadow-lg shadow-indigo-500/20 transition-all font-semibold rounded-xl"
           onClick={() => setActiveMenu && setActiveMenu('todo')}
         >
           <Plus size={18} strokeWidth={2.5} color="#ffffff" />
-          ADD TASK
+          <span className="hidden sm:inline">ADD TASK</span>
         </CustomButton>
         
         {/* NOTIFICATIONS ICON & SHADE */}
@@ -114,6 +125,24 @@ const Header = ({ userName = 'Chief', setActiveMenu, notifications = [], onDismi
                       <div className="flex-1 pr-5">
                         <h4 className="text-[13px] font-bold text-white mb-0.5">{notif.title}</h4>
                         <p className="text-[12px] text-slate-400 leading-snug">{notif.desc}</p>
+                        
+                        {notif.type === 'TEAM_INVITE' && (
+                          <div className="flex gap-2 mt-3 mb-1">
+                            <button 
+                              onClick={() => onNotifAction && onNotifAction(notif, 'accept')} 
+                              className="text-[10px] px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 hover:text-white transition-all rounded font-bold uppercase tracking-widest flex items-center justify-center flex-1"
+                            >
+                              Accept
+                            </button>
+                            <button 
+                              onClick={() => onNotifAction && onNotifAction(notif, 'reject')} 
+                              className="text-[10px] px-3 py-1.5 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/30 hover:text-white transition-all rounded font-bold uppercase tracking-widest flex items-center justify-center flex-1"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        )}
+
                         <span className="text-[10px] text-slate-500 mt-2 block font-medium uppercase tracking-wider">
                           {new Date(notif.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>

@@ -1,17 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CustomButton, IconButton } from './UI'; // Assuming UI.jsx exists
+import { Rocket, CheckCircle, Folder, Settings, Calendar, HelpCircle, Search } from 'lucide-react';
+import NexusIcon from './NexusIcon';
 import Sidebar from './Sidebar'; // Assuming Sidebar.jsx exists
 import Header from './Header'; // Assuming Header.jsx exists
 
 // --- Mock Help Data ---
 // In a real app, fetch this from an API or CMS
 const helpCategories = [
-  { id: 'cat1', title: 'Getting Started', description: 'Basics of Nexus AI', icon: '🚀' },
-  { id: 'cat2', title: 'Managing Tasks', description: 'Adding, editing, and completing tasks', icon: '✔️' },
-  { id: 'cat3', title: 'Projects', description: 'Creating and tracking projects', icon: '📂' },
-  { id: 'cat4', title: 'Account Settings', description: 'Profile, password, and preferences', icon: '⚙️' },
-  { id: 'cat5', title: 'Calendar', description: 'Using the calendar view', icon: '🗓️' },
-  { id: 'cat6', title: 'Troubleshooting', description: 'Common issues and solutions', icon: '❓' },
+  { id: 'cat1', title: 'Getting Started', description: 'Basics of Nexus AI', icon: <Rocket size={20} /> },
+  { id: 'cat2', title: 'Managing Tasks', description: 'Adding, editing, and completing tasks', icon: <CheckCircle size={20} /> },
+  { id: 'cat3', title: 'Projects', description: 'Creating and tracking projects', icon: <Folder size={20} /> },
+  { id: 'cat4', title: 'Account Settings', description: 'Profile, password, and preferences', icon: <Settings size={20} /> },
+  { id: 'cat5', title: 'Calendar', description: 'Using the calendar view', icon: <Calendar size={20} /> },
+  { id: 'cat6', title: 'Troubleshooting', description: 'Common issues and solutions', icon: <HelpCircle size={20} /> },
 ];
 
 const helpArticles = [
@@ -114,7 +116,7 @@ const HelpCenterPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
 
   return (
     <div className="flex h-full w-full overflow-hidden">
-      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
+      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
 
       <main className="flex-1 overflow-y-scroll custom-scrollbar relative">
         <Header userName={userName} setActiveMenu={setActiveMenu} />
@@ -142,7 +144,7 @@ const HelpCenterPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
                   placeholder="Search help articles..."
                   className="w-full p-4 pl-12 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400 border border-transparent text-lg"
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 text-xl">🔍</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 text-xl"><Search size={20} /></span>
               </div>
            )}
 
@@ -228,7 +230,7 @@ const HelpCenterPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
 
         {/* Floating AI Button */}
         <div className="fixed bottom-6 right-6 z-50">
-          <IconButton icon={<span className="text-2xl">🤖</span>} className="w-16 h-16 !bg-red-600 hover:!bg-red-700 !text-white !shadow-lg !shadow-red-500/50" onClick={() => alert("Nexus AI Clicked!")} />
+          <IconButton icon={<NexusIcon size={28} />} className="w-16 h-16 !text-white !shadow-lg transition-all duration-300 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 !shadow-indigo-500/40 hover:scale-105" onClick={() => alert("Nexus AI Clicked!")} />
         </div>
       </main>
     </div>

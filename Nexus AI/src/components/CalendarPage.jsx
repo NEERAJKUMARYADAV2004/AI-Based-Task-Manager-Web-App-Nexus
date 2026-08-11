@@ -6,8 +6,10 @@ import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 import 'react-big-calendar/lib/css/react-big-calendar.css'; // Ensure CSS is imported
 
 import { Card, CustomButton, IconButton } from './UI';
+import NexusIcon from './NexusIcon';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import { API_URL, getAuthHeaders } from '../utils/api';
 
 // Setup the localizer by providing the moment Object
 const localizer = momentLocalizer(moment);
@@ -58,13 +60,59 @@ const formatDateForInput = (date) => {
 
 const CalendarPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
     // --- State ---
-    const [events, setEvents] = useState([
-        { id: 1, title: 'Plan trip to Ladakh', start: new Date(2025, 9, 29, 10, 0, 0), end: new Date(2025, 9, 29, 11, 30, 0), resourceId: 'task' },
-        { id: 2, title: 'Nexus AI Presentation Prep', start: new Date(2025, 10, 5), end: new Date(2025, 10, 6), allDay: true, resourceId: 'project' },
-        { id: 3, title: 'Grocery Shopping', start: new Date(2025, 10, 1, 14, 0, 0), end: new Date(2025, 10, 1, 15, 0, 0), resourceId: 'task' }
-    ]);
+    const [events, setEvents] = useState([]);
     const [view, setView] = useState('month');
     const [date, setDate] = useState(new Date());
+
+    // --- Fetch Real Data ---
+    React.useEffect(() => {
+        const fetchEvents = async () => {
+            try {
+                const [tasksRes, projectsRes] = await Promise.all([
+                    fetch(`${API_URL}/tasks`, { headers: getAuthHeaders() }),
+                    fetch(`${API_URL}/projects`, { headers: getAuthHeaders() })
+                ]);
+                
+                let loadedEvents = [];
+                
+                if (tasksRes.ok) {
+                    const tasks = await tasksRes.json();
+                    tasks.forEach(t => {
+                        const dueDate = new Date(t.dueDate);
+                        loadedEvents.push({
+                            id: t._id,
+                            title: `Task: ${t.taskName || t.title}`,
+                            start: dueDate,
+                            end: dueDate,
+                            allDay: true,
+                            resourceId: 'task'
+                        });
+                    });
+                }
+                
+                if (projectsRes.ok) {
+                    const projects = await projectsRes.json();
+                    projects.forEach(p => {
+                        const start = p.startDate ? new Date(p.startDate) : new Date();
+                        const end = p.dueDate ? new Date(p.dueDate) : new Date(start);
+                        loadedEvents.push({
+                            id: p._id,
+                            title: `Project: ${p.name}`,
+                            start: start,
+                            end: end,
+                            allDay: true,
+                            resourceId: 'project'
+                        });
+                    });
+                }
+                
+                setEvents(loadedEvents);
+            } catch (err) {
+                 console.error("Failed to load calendar events", err);
+            }
+        };
+        fetchEvents();
+    }, []);
 
     // --- Calendar Event Handlers ---
     const moveEventHandler = useCallback(
@@ -136,7 +184,7 @@ const CalendarPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
 
     return (
         <div className="flex h-full w-full overflow-hidden">
-            <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
+            <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
             <main className="flex-1 flex flex-col overflow-hidden custom-scrollbar relative">
                 <Header userName={userName} setActiveMenu={setActiveMenu} />
                 <div className="flex-grow p-6 bg-white/5 backdrop-blur-sm border border-white/10 m-6 rounded-xl shadow-xl overflow-auto custom-scrollbar">
@@ -179,8 +227,8 @@ const CalendarPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
                 </div>
                 <div className="fixed bottom-6 right-6 z-50">
                     <IconButton
-                        icon={<span className="text-2xl">🤖</span>}
-                        className="w-16 h-16 !bg-red-600 hover:!bg-red-700 !text-white !shadow-lg !shadow-red-500/50"
+                        icon={<NexusIcon size={28} />}
+                        className="w-16 h-16 !text-white !shadow-lg transition-all duration-300 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 !shadow-indigo-500/40 hover:scale-105"
                         onClick={() => alert("Nexus AI Clicked!")}
                     />
                 </div>

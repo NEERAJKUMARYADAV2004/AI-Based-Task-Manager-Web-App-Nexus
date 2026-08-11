@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CustomButton, IconButton } from './UI';
+import NexusIcon from './NexusIcon';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { API_URL, getAuthHeaders } from '../utils/api';
@@ -18,7 +19,7 @@ const formatDateForInput = (date) => {
   return d.toISOString().split('T')[0];
 };
 
-const MyProjectsPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notifications, onDismissNotification, onClearAll }) => {
+const MyProjectsPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notifications, onDismissNotification, onClearAll, isMobileMenuOpen, setIsMobileMenuOpen, onNotifAction }) => {
   // --- State ---
   const [projects, setProjects] = useState([]);
 
@@ -168,7 +169,7 @@ const MyProjectsPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notifi
 
   return (
     <div className="flex h-full w-full overflow-hidden">
-      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
+      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
       <main className="flex-1 overflow-y-scroll no-scrollbar relative">
         <Header 
           userName={userName} 
@@ -176,6 +177,9 @@ const MyProjectsPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notifi
           notifications={notifications}
           onDismissNotification={onDismissNotification}
           onClearAll={onClearAll}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          onNotifAction={onNotifAction}
         />
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
@@ -303,7 +307,7 @@ const MyProjectsPage = ({ activeMenu, setActiveMenu, onSignOut, userName, notifi
           </div>
         </div>
         <div className="fixed bottom-6 right-6 z-50">
-          <IconButton icon={<span className="text-2xl">🤖</span>} className="w-16 h-16 !bg-red-600 hover:!bg-red-700 !text-white !shadow-lg !shadow-red-500/50" onClick={() => alert("Nexus AI Clicked!")} />
+          <IconButton icon={<NexusIcon size={28} />} className="w-16 h-16 !text-white !shadow-lg transition-all duration-300 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 !shadow-indigo-500/40 hover:scale-105" onClick={() => alert("Nexus AI Clicked!")} />
         </div>
       </main>
     </div>

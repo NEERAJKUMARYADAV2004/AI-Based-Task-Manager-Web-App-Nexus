@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { IconButton } from './UI';
+import NexusIcon from './NexusIcon';
+import { Sparkles } from 'lucide-react';
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,6 +14,8 @@ const Chatbot = () => {
   const [countdown, setCountdown] = useState(0); 
   const messagesEndRef = useRef(null);
   const autoSendTimerRef = useRef(null); 
+  const silenceTimerRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   const [messages, setMessages] = useState([
     {
@@ -69,12 +73,11 @@ const Chatbot = () => {
   };
 
   const cancelAutoSend = () => {
-    if (autoSendTimerRef.current) {
-      clearTimeout(autoSendTimerRef.current);
-      autoSendTimerRef.current = null;
-    }
-    if (countdown > 0) {
-      setCountdown(0);
+    clearTimeout(autoSendTimerRef.current);
+    clearTimeout(silenceTimerRef.current);
+    setCountdown(0);
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
     }
   };
 
@@ -100,34 +103,73 @@ const Chatbot = () => {
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
 
     recognition.lang = 'en-US';
-    recognition.interimResults = false;
+    recognition.continuous = true;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
     let finalTranscript = '';
+    let hasSpeech = false;
 
-    recognition.onstart = () => setIsListening(true);
+    const startSilenceTimer = () => {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = setTimeout(() => {
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+        }, 5000); // Wait 5 seconds before turning off
+    };
+
+    recognition.onstart = () => {
+        setIsListening(true);
+        startSilenceTimer();
+    };
     
     recognition.onresult = (event) => {
-        finalTranscript = event.results[0][0].transcript;
-        setInputValue(finalTranscript);
+        let currentTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript + ' ';
+            } else {
+                currentTranscript += event.results[i][0].transcript;
+            }
+        }
+        
+        const fullTranscript = (finalTranscript + currentTranscript).trim();
+        setInputValue(fullTranscript);
+        
+        if (fullTranscript) {
+            hasSpeech = true;
+        }
+
+        // Restart silence timer every time they speak
+        startSilenceTimer();
     };
 
     recognition.onerror = (event) => {
         console.error("Speech error", event.error);
         setIsListening(false);
+        clearTimeout(silenceTimerRef.current);
     };
 
     recognition.onend = () => {
         setIsListening(false);
-        if (finalTranscript.trim()) {
-            setCountdown(5); 
-            autoSendTimerRef.current = setTimeout(() => {
-                handleSendMessage(null, finalTranscript); 
-                setCountdown(0); 
-            }, 5000);
-        }
+        clearTimeout(silenceTimerRef.current);
+        
+        // If they spoke anything, start the 5s auto-send countdown exactly like before
+        setInputValue(prev => {
+            const finalStr = prev.trim();
+            if (finalStr) {
+                setCountdown(5); 
+                autoSendTimerRef.current = setTimeout(() => {
+                    handleSendMessage(null, finalStr); 
+                    setCountdown(0); 
+                }, 5000);
+            }
+            return prev;
+        });
     };
 
     recognition.start();
@@ -184,7 +226,7 @@ const Chatbot = () => {
         {/* Header */}
         <div className="p-4 bg-white/5 border-b border-white/10 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white text-lg">🤖</div>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-lg"><NexusIcon size={18} /></div>
             <div>
               <h3 className="text-white font-bold text-sm">Nexus AI</h3>
               <p className="text-white/50 text-xs flex items-center gap-1">
@@ -281,8 +323,8 @@ const Chatbot = () => {
 
       <div className="fixed bottom-6 right-6 z-50">
         <IconButton
-            icon={isOpen ? <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg> : <span className="text-3xl">🤖</span>}
-            className={`w-16 h-16 !text-white !shadow-lg !shadow-red-500/50 transition-all duration-300 ${isOpen ? '!bg-slate-700 rotate-180' : '!bg-red-600 hover:!bg-red-700'}`}
+            icon={isOpen ? <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg> : <NexusIcon size={32} className="text-white" />}
+            className={`w-16 h-16 !text-white !shadow-lg transition-all duration-300 ${isOpen ? '!bg-slate-700 rotate-180' : 'bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 !shadow-indigo-500/40 hover:scale-105'}`}
             onClick={() => setIsOpen(!isOpen)}
         />
       </div>

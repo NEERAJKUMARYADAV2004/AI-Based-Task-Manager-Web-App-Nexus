@@ -13,7 +13,6 @@ import ProfilePage from './components/ProfilePage';
 import Chatbot from './components/Chatbot';
 import { io } from 'socket.io-client';
 import { API_URL, getAuthHeaders } from './utils/api';
-import { mockDashboardData } from './data/mockData';
 
 // --- MAIN APPLICATION COMPONENT ---
 const App = () => {
@@ -23,7 +22,23 @@ const App = () => {
   const [authMode, setAuthMode] = useState('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [dashboardData, setDashboardData] = useState(mockDashboardData);
+  const [dashboardData, setDashboardData] = useState({
+    overallTasksDone: 0,
+    dailyStats: [
+      { label: "Done", count: 0, color: "text-red-400", bg: "border-red-400" },
+      { label: "Ongoing", count: 0, color: "text-amber-400", bg: "border-amber-400" },
+      { label: "Due", count: 0, color: "text-black", bg: "border-black bg-white" }
+    ],
+    calendar: { date: new Date(), message: "Getting your schedule...", eventCount: 0 },
+    taskProgress: [
+      { day: 'Mon', status: 'Done' }, { day: 'Tue', status: 'Ongoing' }, { day: 'Wed', status: 'Done' },
+      { day: 'Thu', status: 'Due' }, { day: 'Fri', status: 'Done' }, { day: 'Sat', status: 'Ongoing' }, { day: 'Sun', status: 'Done' }
+    ],
+    ongoingProjects: [],
+    todayNote: "",
+    todayTasks: [], // Changed to array for the slider
+    upcomingEvent: null
+  });
   
   // Global Profile States
   const [userName, setUserName] = useState('Chief');
@@ -31,6 +46,9 @@ const App = () => {
 
   // Global Notifications State
   const [notifications, setNotifications] = useState([]);
+
+  // Mobile Menu State
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // --- AUTH AND DATA LOADING LOGIC (FIXED FOR RELOAD PERSISTENCE) ---
   useEffect(() => {
@@ -74,13 +92,115 @@ const App = () => {
     initApp();
   }, []);
 
-  // --- GLOBAL SOCKET NOTIFICATIONS LISTENER ---
+  // --- GLOBAL SOCKET NOTIFICATIONS LISTENER & DASHBOARD DATA FETCH ---
+  useEffect(() => {
+    // Only re-fetch dashboard summary when the user actually views the dashboard.
+    // This solves "stale data" / state syncing without page refresh.
+    if (user && activeMenu === 'dashboard') {
+      const fetchDashboardData = async () => {
+        try {
+          const [tasksRes, projectsRes, notesRes] = await Promise.all([
+            fetch(`${API_URL}/tasks`, { headers: getAuthHeaders() }),
+            fetch(`${API_URL}/projects`, { headers: getAuthHeaders() }),
+            fetch(`${API_URL}/notes`, { headers: getAuthHeaders() })
+          ]);
+          
+          if (tasksRes.ok && projectsRes.ok && notesRes.ok) {
+            const tasks = await tasksRes.json();
+            const projects = await projectsRes.json();
+            const notes = await notesRes.json();
+            
+            let overallTasksDone = 0;
+            let doneCount = 0;
+            let ongoingCount = 0;
+            let dueCount = 0;
+            
+            const now = new Date();
+            now.setHours(0,0,0,0);
+            
+            let todayTasks = [];
+            let upcomingEvent = null;
+            let todayEventCount = 0;
+            
+            tasks.forEach(t => {
+                if (t.completed) {
+                    overallTasksDone++;
+                    doneCount++;
+                } else {
+                    const dueDate = new Date(t.dueDate);
+                    dueDate.setHours(0,0,0,0);
+                    if (dueDate < now) dueCount++;
+                    else ongoingCount++;
+                    
+                    if (dueDate.getTime() === now.getTime()) {
+                        todayTasks.push({ title: t.taskName || t.title, date: new Date(t.dueDate).toLocaleDateString('en-GB') });
+                        todayEventCount++;
+                    }
+                    if (dueDate >= now && (!upcomingEvent || dueDate < new Date(upcomingEvent.date))) {
+                        upcomingEvent = { title: `Task: ${t.taskName || t.title}`, date: t.dueDate };
+                    }
+                }
+            });
+            
+            // Priority ordering dictionary
+            const priorityWeight = { 'high': 3, 'medium': 2, 'low': 1 };
+            
+            projects.forEach(p => {
+                const dueDate = p.dueDate ? new Date(p.dueDate) : new Date();
+                dueDate.setHours(0,0,0,0);
+                if (dueDate.getTime() === now.getTime()) todayEventCount++;
+                if (dueDate >= now && (!upcomingEvent || dueDate < new Date(upcomingEvent.date))) {
+                    upcomingEvent = { title: `Project: ${p.name}`, date: p.dueDate };
+                }
+            });
+
+            // Sort logic: High Priority -> Nearest Due Date
+            const sortedProjects = projects.sort((a, b) => {
+                const weightA = priorityWeight[(a.priority || '').toLowerCase()] || 0;
+                const weightB = priorityWeight[(b.priority || '').toLowerCase()] || 0;
+                if (weightA !== weightB) return weightB - weightA;
+                
+                const timeA = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+                const timeB = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+                return timeA - timeB;
+            });
+            
+            setDashboardData({
+              overallTasksDone,
+              dailyStats: [
+                { label: "Done", count: doneCount, color: "text-emerald-400", bg: "border-emerald-400/50" },
+                { label: "Ongoing", count: ongoingCount, color: "text-amber-400", bg: "border-amber-400/50" },
+                { label: "Due", count: dueCount, color: "text-rose-400", bg: "border-rose-400/50" }
+              ],
+              calendar: { date: new Date(), message: upcomingEvent ? upcomingEvent.title : "", eventCount: todayEventCount },
+              taskProgress: [
+                { day: 'Mon', status: 'Done' }, { day: 'Tue', status: 'Ongoing' }, { day: 'Wed', status: 'Done' },
+                { day: 'Thu', status: 'Due' }, { day: 'Fri', status: 'Done' }, { day: 'Sat', status: 'Ongoing' }, { day: 'Sun', status: 'Done' }
+              ],
+              ongoingProjects: sortedProjects.slice(0, 2).map(p => ({ 
+                  id: p._id, title: p.name, date: p.dueDate || p.startDate, priority: p.priority 
+              })),
+              todayNote: notes.length > 0 ? notes[0].content : "",
+              todayTasks: todayTasks,
+              upcomingEvent
+            });
+          }
+        } catch (err) {
+          console.error("Failed to fetch dashboard summary", err);
+        }
+      };
+      
+      fetchDashboardData();
+    }
+  }, [user, activeMenu]); // Dependency array perfectly handles automatic sync when user returns to Dashboard
+
   useEffect(() => {
     if (user) {
-      setDashboardData(mockDashboardData);
-      
       const globalSocket = io('http://localhost:5000');
       
+      const currentUserId = user._id || user.id || user.uid;
+      globalSocket.emit('join_user', currentUserId);
+
       const setupGlobalNotifications = async () => {
           try {
               const res = await fetch(`${API_URL}/teams`, { headers: getAuthHeaders() });
@@ -96,16 +216,31 @@ const App = () => {
       setupGlobalNotifications();
 
       globalSocket.on('receive_update', (data) => {
-          const currentUserId = user._id || user.id || user.uid; 
           if (data.senderId && data.senderId !== currentUserId) {
               const newNotif = {
                   id: `notif-${Date.now()}-${Math.random()}`,
                   title: data.senderName || 'A team member',
                   desc: data.actionMessage || 'made an update.',
                   type: data.type,
+                  teamId: data.teamId,
                   time: data.serverTimestamp || new Date().toISOString()
               };
               setNotifications(prev => [newNotif, ...prev]);
+          }
+      });
+
+      globalSocket.on('new_notification', (data) => {
+          const newNotif = {
+              id: data.id,
+              title: data.title,
+              desc: data.desc,
+              type: data.type,
+              teamId: data.teamId,
+              time: data.serverTimestamp || new Date().toISOString()
+          };
+          setNotifications(prev => [newNotif, ...prev]);
+          if (data.type === 'INVITE_RESPONSE' || data.type === 'TEAM_INVITE') {
+              window.dispatchEvent(new Event('nexus-teams-updated'));
           }
       });
 
@@ -137,20 +272,9 @@ const App = () => {
       setUserName(data.user.name || email.split('@')[0]);
       setUserAvatar(data.user.avatar || '');
     } catch (e) {
-      // Offline Mock Fallback
-      console.warn("Backend auth failed, falling back to local mock auth", e);
-      if (mode === 'register' && password.length < 6) {
-        setError("Password must be at least 6 characters.");
-        setLoading(false);
-        return;
-      }
-      const extractedName = email.split('@')[0];
-      const mockUser = { uid: `mock-user-${Date.now()}`, email: email, name: extractedName };
-      setUser(mockUser);
-      setUserName(extractedName);
-      setUserAvatar('');
-      localStorage.setItem('nexus-user', JSON.stringify(mockUser));
-      localStorage.setItem('nexus-token', 'mock-token');
+      // Offline Mock Fallback removed per request to delete mock data
+      console.error("Backend auth failed", e);
+      setError(e.message || "Authentication failed. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -168,6 +292,22 @@ const App = () => {
 
   const handleDismissNotification = (id) => setNotifications(prev => prev.filter(n => n.id !== id));
   const handleClearAllNotifications = () => setNotifications([]);
+
+  const handleNotifAction = async (notif, action) => {
+    try {
+      if (notif.type === 'TEAM_INVITE') {
+        const res = await fetch(`${API_URL}/teams/${notif.teamId}/invite-response`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ accept: action === 'accept' })
+        });
+        if (res.ok) {
+          handleDismissNotification(notif.id);
+          window.dispatchEvent(new Event('nexus-teams-updated'));
+        }
+      }
+    } catch (e) { console.error('Failed to respond to invite', e); }
+  };
 
   if (!isAuthReady) {
     return <div className="flex items-center justify-center h-screen bg-slate-900 text-white">Initializing Dashboard...</div>;
@@ -191,7 +331,10 @@ const App = () => {
     setUserAvatar,
     notifications,
     onDismissNotification: handleDismissNotification,
-    onClearAll: handleClearAllNotifications
+    onClearAll: handleClearAllNotifications,
+    onNotifAction: handleNotifAction,
+    isMobileMenuOpen,
+    setIsMobileMenuOpen
   };
 
   return (
@@ -200,10 +343,14 @@ const App = () => {
         /* =========================================
            1. LUXURY TYPOGRAPHY & SCROLLBARS
            ========================================= */
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
         * {
           font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        
+        h1, h2, h3, h4, .serif-font {
+          font-family: 'Playfair Display', serif;
         }
 
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -222,7 +369,7 @@ const App = () => {
       {activeMenu === 'calendar' && <CalendarPage {...pageProps} />}
       {activeMenu === 'projects' && <MyProjectsPage {...pageProps} />}
       {activeMenu === 'notes' && <MyNotesPage {...pageProps} />}
-      {activeMenu === 'stats' && <StatsPage {...pageProps} />}
+      {activeMenu === 'stats' && <StatsPage dashboardData={dashboardData} {...pageProps} />}
       {activeMenu === 'contact' && <ContactUsPage {...pageProps} />}
       {activeMenu === 'help' && <HelpCenterPage {...pageProps} />}
       {activeMenu === 'collab' && <CollaborationPage {...pageProps} />}

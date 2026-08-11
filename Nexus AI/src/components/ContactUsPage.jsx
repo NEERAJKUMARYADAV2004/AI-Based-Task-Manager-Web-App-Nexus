@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CustomButton, IconButton } from './UI'; // Assuming UI.jsx exists
+import { MapPin, Phone, Mail, Clock } from 'lucide-react';
+import NexusIcon from './NexusIcon';
 import Sidebar from './Sidebar'; // Assuming Sidebar.jsx exists
 import Header from './Header'; // Assuming Header.jsx exists
 
@@ -44,7 +46,7 @@ const ContactUsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
 
   return (
     <div className="flex h-full w-full overflow-hidden">
-      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} />
+      <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} onSignOut={onSignOut} isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
 
       {/* Main content area */}
       <main className="flex-1 overflow-y-scroll custom-scrollbar relative">
@@ -130,28 +132,36 @@ const ContactUsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
               <Card title="Contact Information" className="!bg-slate-800/80">
                 <div className="space-y-6 text-white/90">
                   <div className="flex items-start gap-4">
-                    <span className="text-xl mt-1 text-red-400">📍</span>
+                    <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-red-400"><MapPin size={20} /></span>
+                    </div>
                     <div>
                       <h4 className="font-semibold">Address</h4>
                       <p className="text-sm text-white/70">123 Nexus Lane,<br />Tech City, TC 12345,<br />Digital World</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4">
-                    <span className="text-xl mt-1 text-red-400">📞</span>
+                    <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-red-400"><Phone size={20} /></span>
+                    </div>
                     <div>
                       <h4 className="font-semibold">Phone</h4>
                       <p className="text-sm text-white/70">+1 (555) 123-4567</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4">
-                    <span className="text-xl mt-1 text-red-400">✉️</span>
+                    <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-red-400"><Mail size={20} /></span>
+                    </div>
                     <div>
                       <h4 className="font-semibold">Email</h4>
                       <p className="text-sm text-white/70">support@nexusai.example</p>
                     </div>
                   </div>
                    <div className="flex items-start gap-4">
-                    <span className="text-xl mt-1 text-red-400">🕒</span>
+                    <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-red-400"><Clock size={20} /></span>
+                    </div>
                     <div>
                       <h4 className="font-semibold">Support Hours</h4>
                       <p className="text-sm text-white/70">Monday - Friday<br />9:00 AM - 5:00 PM (Your Timezone)</p>
@@ -167,8 +177,8 @@ const ContactUsPage = ({ activeMenu, setActiveMenu, onSignOut, userName }) => {
         {/* Floating AI Button */}
         <div className="fixed bottom-6 right-6 z-50">
           <IconButton
-            icon={<span className="text-2xl">🤖</span>}
-            className="w-16 h-16 !bg-red-600 hover:!bg-red-700 !text-white !shadow-lg !shadow-red-500/50"
+            icon={<NexusIcon size={28} />}
+            className="w-16 h-16 !text-white !shadow-lg transition-all duration-300 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 !shadow-indigo-500/40 hover:scale-105"
             onClick={() => alert("Nexus AI Clicked!")}
           />
         </div>

@@ -31,7 +31,7 @@ mongoose.connect(process.env.MONGO_URI)
 // --- Socket.IO Setup (Upgraded for Real-time Collab & Notifications) ---
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000", // Your React Client URL
+    origin: "*", 
     methods: ["GET", "POST", "PUT", "DELETE"]
   }
 });
@@ -48,6 +48,10 @@ io.on('connection', (socket) => {
 
   socket.on('join_team', (teamId) => {
     socket.join(teamId);
+  });
+
+  socket.on('join_user', (userId) => {
+    socket.join(userId);
   });
 
   socket.on('send_update', (data) => {

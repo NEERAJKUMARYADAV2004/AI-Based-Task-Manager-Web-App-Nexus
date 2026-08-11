@@ -17,7 +17,9 @@ import {
 const Sidebar = ({
   activeMenu,
   setActiveMenu,
-  onSignOut
+  onSignOut,
+  isMobileMenuOpen,
+  setIsMobileMenuOpen
 }) => {
 
   // Navigation Items using Lucide Icons
@@ -40,7 +42,10 @@ const Sidebar = ({
   // Elegant Menu Item Component
   const MenuItem = ({ icon: Icon, label, isActive, onClick }) => (
     <div
-      onClick={onClick}
+      onClick={() => {
+        onClick();
+        if (setIsMobileMenuOpen) setIsMobileMenuOpen(false); // Auto close on mobile when an item is clicked
+      }}
       className={`group flex items-center px-4 py-3 my-1 rounded-xl cursor-pointer transition-all duration-300 relative overflow-hidden
         ${isActive 
           ? 'bg-gradient-to-r from-red-600/10 to-transparent text-white font-medium shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]' 
@@ -61,29 +66,38 @@ const Sidebar = ({
   );
 
   return (
-    <div className="w-72 p-5 flex flex-col h-full backdrop-blur-xl border-r shadow-2xl z-10 flex-shrink-0 transition-colors duration-300 bg-[#0a0f1c]/90 border-white/5">
-      
-      {/* Luxury Logo Area */}
-      <div className="flex items-center gap-3 mb-8 px-2 flex-shrink-0">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/30 border border-transparent">
-          <span className="text-white font-black text-lg tracking-tighter">N</span>
-        </div>
-        <h1 className="text-2xl font-extrabold text-transparent bg-clip-text tracking-wider bg-gradient-to-r from-white to-white/70">
-          Nexus AI
-        </h1>
-      </div>
-
-      {/* Sleek Search Bar */}
-      <div className="mb-6 relative flex-shrink-0 px-2">
-        <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-          <Search size={16} className="text-white/40" />
-        </div>
-        <input
-          type="text"
-          placeholder="Search..."
-          className="w-full pl-11 pr-4 py-2.5 rounded-xl border text-sm focus:outline-none transition-all duration-300 shadow-inner bg-white/5 border-white/5 text-white placeholder-white/40 focus:ring-2 focus:ring-red-500/50 focus:bg-white/10"
+    <>
+      {/* MOBILE OVERLAY */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 xl:hidden transition-opacity" 
+          onClick={() => setIsMobileMenuOpen(false)}
         />
-      </div>
+      )}
+      
+      <div className={`fixed xl:static inset-y-0 left-0 w-72 p-5 flex flex-col h-full backdrop-blur-xl border-r shadow-2xl z-50 flex-shrink-0 transition-transform duration-300 ease-out bg-[#0a0f1c] xl:bg-[#0a0f1c]/90 border-white/5 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'}`}>
+        
+        {/* Luxury Logo Area */}
+        <div className="flex items-center gap-3 mb-8 px-2 flex-shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/30 border border-transparent">
+            <span className="text-white font-black text-lg tracking-tighter">N</span>
+          </div>
+          <h1 className="text-2xl font-extrabold text-transparent bg-clip-text tracking-wider bg-gradient-to-r from-white to-white/70">
+            Nexus AI
+          </h1>
+        </div>
+
+        {/* Sleek Search Bar */}
+        <div className="mb-6 relative flex-shrink-0 px-2">
+          <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+            <Search size={16} className="text-white/40" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search..."
+            className="w-full pl-11 pr-4 py-2.5 rounded-xl border text-sm focus:outline-none transition-all duration-300 shadow-inner bg-white/5 border-white/5 text-white placeholder-white/40 focus:ring-2 focus:ring-red-500/50 focus:bg-white/10"
+          />
+        </div>
       
       {/* Navigation Sections */}
       <nav className="flex-grow overflow-y-auto no-scrollbar px-2 pb-4"> 
@@ -129,6 +143,7 @@ const Sidebar = ({
         </button>
       </div>
     </div>
+    </>
   );
 };
 

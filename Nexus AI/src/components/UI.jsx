@@ -51,12 +51,16 @@ export const CustomButton = ({
 export const IconButton = ({
   icon,
   onClick,
-  className = ''
+  className = '',
+  type = 'button',
+  title = ''
 }) => (
   <button
+    type={type}
+    title={title}
     onClick={onClick}
     className={
-      `p-2.5 rounded-full text-indigo-400 hover:text-white transition-colors duration-200
+      `p-2.5 rounded-full flex items-center justify-center text-indigo-400 hover:text-white transition-colors duration-200
        bg-white/5 backdrop-blur-sm hover:bg-indigo-600/50 cursor-pointer ${className}`
     }
   >
